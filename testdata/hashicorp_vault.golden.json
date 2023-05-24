@@ -191,6 +191,257 @@
             "enabled": false
           }
         ]
+      },
+      "pipelines": {
+        "default.yml": {
+          "description": "Pipeline for processing Hashicorp Vault audit logs.",
+          "processors": [
+            {
+              "set": {
+                "field": "ecs.version",
+                "value": "8.7.0"
+              }
+            },
+            {
+              "rename": {
+                "field": "message",
+                "ignore_failure": true,
+                "ignore_missing": true,
+                "target_field": "event.original"
+              }
+            },
+            {
+              "json": {
+                "field": "event.original",
+                "ignore_failure": true,
+                "target_field": "hashicorp_vault.audit"
+              }
+            },
+            {
+              "date": {
+                "field": "hashicorp_vault.audit.time",
+                "formats": [
+                  "ISO8601"
+                ]
+              }
+            },
+            {
+              "remove": {
+                "field": [
+                  "hashicorp_vault.audit.time"
+                ],
+                "ignore_missing": true
+              }
+            },
+            {
+              "set": {
+                "field": "event.kind",
+                "value": "event"
+              }
+            },
+            {
+              "append": {
+                "field": "event.category",
+                "value": "authentication"
+              }
+            },
+            {
+              "append": {
+                "field": "event.type",
+                "if": "ctx?.hashicorp_vault?.audit?.request?.operation == 'create'",
+                "value": "creation"
+              }
+            },
+            {
+              "append": {
+                "field": "event.type",
+                "if": "ctx?.hashicorp_vault?.audit?.request?.operation == 'delete'",
+                "value": "deletion"
+              }
+            },
+            {
+              "append": {
+                "field": "event.type",
+                "if": "ctx?.hashicorp_vault?.audit?.request?.operation == 'update'",
+                "value": "change"
+              }
+            },
+            {
+              "append": {
+                "field": "event.type",
+                "if": "ctx?.hashicorp_vault?.audit?.request?.operation == 'read' || ctx?.hashicorp_vault?.audit?.request?.operation == 'list'",
+                "value": "access"
+              }
+            },
+            {
+              "append": {
+                "field": "event.type",
+                "if": "ctx?.hashicorp_vault?.audit?.error != null",
+                "value": "error"
+              }
+            },
+            {
+              "append": {
+                "field": "event.type",
+                "if": "ctx?.hashicorp_vault?.audit?.error != null \u0026\u0026 ctx.hashicorp_vault.audit.error.contains(\"denied\")",
+                "value": "denied"
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.audit.request.operation",
+                "field": "event.action"
+              }
+            },
+            {
+              "set": {
+                "field": "event.outcome",
+                "if": "ctx?.hashicorp_vault?.audit?.error == null",
+                "value": "success"
+              }
+            },
+            {
+              "set": {
+                "field": "event.outcome",
+                "if": "ctx?.hashicorp_vault?.audit?.error != null",
+                "value": "failure"
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.audit.request.id",
+                "field": "event.id",
+                "ignore_failure": true
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.audit.error",
+                "field": "message",
+                "ignore_failure": true
+              }
+            },
+            {
+              "convert": {
+                "field": "hashicorp_vault.audit.request.remote_address",
+                "ignore_missing": true,
+                "target_field": "source.ip",
+                "type": "ip"
+              }
+            },
+            {
+              "convert": {
+                "field": "hashicorp_vault.audit.request.remote_port",
+                "ignore_missing": true,
+                "target_field": "source.port",
+                "type": "long"
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.audit.auth.metadata.email",
+                "field": "user.email",
+                "ignore_failure": true
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.audit.auth.metadata.account_id",
+                "field": "user.id",
+                "ignore_failure": true
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.audit.auth.metadata.AllocationID",
+                "field": "nomad.allocation.id",
+                "if": "ctx?.hashicorp_vault?.audit?.auth?.metadata?.AllocationID != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.NodeID != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.Namespace != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.Task != null\n",
+                "ignore_failure": true
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.audit.auth.metadata.Namespace",
+                "field": "nomad.namespace",
+                "if": "ctx?.hashicorp_vault?.audit?.auth?.metadata?.AllocationID != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.NodeID != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.Namespace != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.Task != null\n",
+                "ignore_failure": true
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.audit.auth.metadata.NodeID",
+                "field": "nomad.node.id",
+                "if": "ctx?.hashicorp_vault?.audit?.auth?.metadata?.AllocationID != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.NodeID != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.Namespace != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.Task != null\n",
+                "ignore_failure": true
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.audit.auth.metadata.Task",
+                "field": "nomad.task.name",
+                "if": "ctx?.hashicorp_vault?.audit?.auth?.metadata?.AllocationID != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.NodeID != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.Namespace != null \u0026\u0026 ctx?.hashicorp_vault?.audit?.auth?.metadata?.Task != null\n",
+                "ignore_failure": true
+              }
+            },
+            {
+              "geoip": {
+                "field": "source.ip",
+                "ignore_missing": true,
+                "target_field": "source.geo"
+              }
+            },
+            {
+              "geoip": {
+                "database_file": "GeoLite2-ASN.mmdb",
+                "field": "source.ip",
+                "ignore_missing": true,
+                "properties": [
+                  "asn",
+                  "organization_name"
+                ],
+                "target_field": "source.as"
+              }
+            },
+            {
+              "rename": {
+                "field": "source.as.asn",
+                "ignore_missing": true,
+                "target_field": "source.as.number"
+              }
+            },
+            {
+              "rename": {
+                "field": "source.as.organization_name",
+                "ignore_missing": true,
+                "target_field": "source.as.organization.name"
+              }
+            },
+            {
+              "append": {
+                "allow_duplicates": false,
+                "field": "related.ip",
+                "if": "ctx?.source?.ip != null",
+                "value": "{{{source.ip}}}"
+              }
+            },
+            {
+              "remove": {
+                "field": "event.original",
+                "if": "ctx?.tags == null || !(ctx.tags.contains('preserve_original_event'))",
+                "ignore_failure": true,
+                "ignore_missing": true
+              }
+            }
+          ],
+          "on_failure": [
+            {
+              "set": {
+                "field": "error.message",
+                "value": "{{ _ingest.on_failure_message }}"
+              }
+            }
+          ]
+        }
       }
     },
     "log": {
@@ -247,6 +498,134 @@
             ]
           }
         ]
+      },
+      "pipelines": {
+        "default.yml": {
+          "description": "Pipeline for processing Hashicorp Vault operational logs.",
+          "processors": [
+            {
+              "set": {
+                "field": "ecs.version",
+                "value": "8.7.0"
+              }
+            },
+            {
+              "set": {
+                "field": "event.kind",
+                "value": "event"
+              }
+            },
+            {
+              "rename": {
+                "field": "message",
+                "ignore_failure": true,
+                "target_field": "event.original"
+              }
+            },
+            {
+              "pipeline": {
+                "if": "ctx?.event?.original != null \u0026\u0026 ctx.event.original.startsWith(\"{\")",
+                "name": "{{ IngestPipeline \"json\" }}"
+              }
+            },
+            {
+              "set": {
+                "copy_from": "event.original",
+                "field": "message",
+                "if": "ctx?.event?.original != null \u0026\u0026 !ctx.event.original.startsWith(\"{\")",
+                "ignore_failure": true
+              }
+            },
+            {
+              "remove": {
+                "field": "event.original",
+                "if": "ctx?.tags == null || !(ctx.tags.contains('preserve_original_event'))",
+                "ignore_failure": true,
+                "ignore_missing": true
+              }
+            }
+          ],
+          "on_failure": [
+            {
+              "set": {
+                "field": "error.message",
+                "value": "{{ _ingest.on_failure_message }}"
+              }
+            }
+          ]
+        },
+        "json.yml": {
+          "description": "Pipeline for processing Hashicorp Vault operational logs in JSON format.",
+          "processors": [
+            {
+              "json": {
+                "field": "event.original",
+                "target_field": "hashicorp_vault.log"
+              }
+            },
+            {
+              "date": {
+                "field": "hashicorp_vault.log.@timestamp",
+                "formats": [
+                  "ISO8601"
+                ]
+              }
+            },
+            {
+              "remove": {
+                "field": [
+                  "hashicorp_vault.log.@timestamp"
+                ],
+                "ignore_missing": true
+              }
+            },
+            {
+              "rename": {
+                "field": "hashicorp_vault.log.@level",
+                "ignore_missing": true,
+                "target_field": "log.level"
+              }
+            },
+            {
+              "rename": {
+                "field": "hashicorp_vault.log.@message",
+                "ignore_missing": true,
+                "target_field": "message"
+              }
+            },
+            {
+              "rename": {
+                "field": "hashicorp_vault.log.@module",
+                "ignore_missing": true,
+                "target_field": "log.logger"
+              }
+            },
+            {
+              "script": {
+                "description": "Drop hashicorp_vault.log if empty.",
+                "if": "ctx?.hashicorp_vault?.log != null \u0026\u0026 ctx.hashicorp_vault.log.isEmpty()",
+                "lang": "painless",
+                "source": "ctx.hashicorp_vault.remove(\"log\");\nif (ctx.hashicorp_vault.isEmpty()) {\n  ctx.remove(\"hashicorp_vault\");\n}\n",
+                "tag": "drop-empty-hashicorp_vault.log"
+              }
+            },
+            {
+              "set": {
+                "copy_from": "hashicorp_vault.log.file_path",
+                "field": "file.path",
+                "ignore_failure": true
+              }
+            }
+          ],
+          "on_failure": [
+            {
+              "set": {
+                "field": "error.message",
+                "value": "{{ _ingest.on_failure_message }}"
+              }
+            }
+          ]
+        }
       }
     },
     "metrics": {
@@ -349,6 +728,72 @@
               ]
             }
           }
+        }
+      },
+      "pipelines": {
+        "default.yml": {
+          "description": "Pipeline for processing Hashicorp Vault metrics.",
+          "processors": [
+            {
+              "remove": {
+                "field": [
+                  "event.dataset",
+                  "event.module",
+                  "metricset.name",
+                  "service.address",
+                  "service.type"
+                ],
+                "ignore_missing": true
+              }
+            },
+            {
+              "set": {
+                "field": "ecs.version",
+                "value": "8.7.0"
+              }
+            },
+            {
+              "set": {
+                "field": "service.type",
+                "value": "hashicorp_vault"
+              }
+            },
+            {
+              "set": {
+                "field": "event.kind",
+                "value": "metric"
+              }
+            },
+            {
+              "rename": {
+                "field": "prometheus.labels",
+                "ignore_missing": true,
+                "target_field": "labels"
+              }
+            },
+            {
+              "set": {
+                "field": "labels.job",
+                "override": true,
+                "value": "hashicorp_vault"
+              }
+            },
+            {
+              "rename": {
+                "field": "prometheus",
+                "ignore_missing": true,
+                "target_field": "hashicorp_vault.metrics"
+              }
+            }
+          ],
+          "on_failure": [
+            {
+              "set": {
+                "field": "error.message",
+                "value": "{{ _ingest.on_failure_message }}"
+              }
+            }
+          ]
         }
       }
     }

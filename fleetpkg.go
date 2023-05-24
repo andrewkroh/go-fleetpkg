@@ -18,6 +18,7 @@
 package fleetpkg
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -27,7 +28,7 @@ import (
 )
 
 type Integration struct {
-	Build       BuildManifest          `json:"build,omitempty" yaml:"build,omitempty"`
+	Build       *BuildManifest         `json:"build,omitempty" yaml:"build,omitempty"`
 	Manifest    Manifest               `json:"manifest,omitempty" yaml:"manifest,omitempty"`
 	DataStreams map[string]*DataStream `json:"data_streams,omitempty" yaml:"data_streams,omitempty"`
 }
@@ -44,7 +45,8 @@ type BuildManifest struct {
 }
 
 type DataStream struct {
-	Manifest DataStreamManifest `json:"manifest,omitempty" yaml:"manifest,omitempty"`
+	Manifest  DataStreamManifest        `json:"manifest,omitempty" yaml:"manifest,omitempty"`
+	Pipelines map[string]IngestPipeline `json:"pipelines,omitempty" yaml:"pipelines,omitempty"`
 }
 
 type Manifest struct {
@@ -190,6 +192,58 @@ type Stream struct {
 	Enabled      *bool  `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
+type IngestPipeline struct {
+	// Description of the ingest pipeline.
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+
+	// Processors used to perform transformations on documents before indexing.
+	// Processors run sequentially in the order specified.
+	Processors []*Processor `json:"processors,omitempty" yaml:"processors,omitempty"`
+
+	// Processors to run immediately after a processor failure.
+	OnFailure []*Processor `json:"on_failure,omitempty" yaml:"on_failure,omitempty"`
+
+	// Version number used by external systems to track ingest pipelines.
+	Version *int `json:"version,omitempty" yaml:"version,omitempty"`
+
+	// Optional metadata about the ingest pipeline. May have any contents.
+	Meta map[string]any `json:"_meta,omitempty" yaml:"_meta,omitempty"`
+}
+
+type Processor struct {
+	Type       string
+	Attributes map[string]interface{}
+}
+
+func (p *Processor) UnmarshalYAML(value *yaml.Node) error {
+	var procMap map[string]map[string]interface{}
+	if err := value.Decode(&procMap); err != nil {
+		return err
+	}
+
+	// The struct representation used here is much more convenient
+	// to work with than the original map of map format.
+	for k, v := range procMap {
+		p.Type = k
+		p.Attributes = v
+		break
+	}
+
+	return nil
+}
+
+func (p *Processor) MarshalYAML() (interface{}, error) {
+	return map[string]any{
+		p.Type: p.Attributes,
+	}, nil
+}
+
+func (p *Processor) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]any{
+		p.Type: p.Attributes,
+	})
+}
+
 // Read reads the Fleet integration at the specified path. The path should
 // point to the directory containing the integration's main manifest.yml.
 func Read(path string) (*Integration, error) {
@@ -212,13 +266,28 @@ func Read(path string) (*Integration, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range dataStreams {
-		var dataStreamManifest DataStreamManifest
-		if err := readYAML(f, &dataStreamManifest, true); err != nil {
+	for _, manifestPath := range dataStreams {
+		ds := &DataStream{}
+		integration.DataStreams[filepath.Base(filepath.Dir(manifestPath))] = ds
+
+		if err := readYAML(manifestPath, &ds.Manifest, true); err != nil {
 			return nil, err
 		}
-		integration.DataStreams[filepath.Base(filepath.Dir(f))] = &DataStream{
-			Manifest: dataStreamManifest,
+
+		pipelines, err := filepath.Glob(filepath.Join(filepath.Dir(manifestPath), "elasticsearch/ingest_pipeline/*.yml"))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, pipelinePath := range pipelines {
+			var pipeline IngestPipeline
+			if err = readYAML(pipelinePath, &pipeline, true); err != nil {
+				return nil, err
+			}
+			if ds.Pipelines == nil {
+				ds.Pipelines = map[string]IngestPipeline{}
+			}
+			ds.Pipelines[filepath.Base(pipelinePath)] = pipeline
 		}
 	}
 
