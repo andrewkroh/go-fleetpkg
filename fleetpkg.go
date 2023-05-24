@@ -31,6 +31,13 @@ type Integration struct {
 	Build       *BuildManifest         `json:"build,omitempty" yaml:"build,omitempty"`
 	Manifest    Manifest               `json:"manifest,omitempty" yaml:"manifest,omitempty"`
 	DataStreams map[string]*DataStream `json:"data_streams,omitempty" yaml:"data_streams,omitempty"`
+
+	sourceFile string
+}
+
+// Path returns the path to the integration dir.
+func (i Integration) Path() string {
+	return i.sourceFile
 }
 
 type BuildManifest struct {
@@ -42,12 +49,26 @@ type BuildManifest struct {
 			ImportMappings *bool `json:"import_mappings,omitempty" yaml:"import_mappings,omitempty"`
 		} `json:"ecs,omitempty" yaml:"ecs,omitempty"`
 	} `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+
+	sourceFile string
+}
+
+// Path returns the path to the build.yml file.
+func (m BuildManifest) Path() string {
+	return m.sourceFile
 }
 
 type DataStream struct {
 	Manifest    DataStreamManifest        `json:"manifest,omitempty" yaml:"manifest,omitempty"`
 	Pipelines   map[string]IngestPipeline `json:"pipelines,omitempty" yaml:"pipelines,omitempty"`
 	SampleEvent map[string]any            `json:"sample_event,omitempty" yaml:"sample_event,omitempty"`
+
+	sourceDir string
+}
+
+// Path returns the path to the data stream dir.
+func (ds DataStream) Path() string {
+	return ds.sourceDir
 }
 
 type Manifest struct {
@@ -67,6 +88,13 @@ type Manifest struct {
 	Vars            []Var            `json:"vars,omitempty" yaml:"vars,omitempty"`
 	PolicyTemplates []PolicyTemplate `json:"policy_templates,omitempty" yaml:"policy_templates,omitempty"`
 	Owner           Owner            `json:"owner,omitempty" yaml:"owner,omitempty"`
+
+	sourceFile string
+}
+
+// Path returns the path to the integration manifest.yml.
+func (m Manifest) Path() string {
+	return m.sourceFile
 }
 
 type Source struct {
@@ -182,6 +210,13 @@ type DataStreamManifest struct {
 	Type            string         `json:"type,omitempty" yaml:"type,omitempty"`
 	Streams         []Stream       `json:"streams,omitempty" yaml:"streams,omitempty"`
 	Elasticsearch   map[string]any `json:"elasticsearch,omitempty" yaml:"elasticsearch,omitempty"`
+
+	sourceFile string
+}
+
+// Path returns the path to the data stream manifest.yml.
+func (m DataStreamManifest) Path() string {
+	return m.sourceFile
 }
 
 type Stream struct {
@@ -209,6 +244,13 @@ type IngestPipeline struct {
 
 	// Optional metadata about the ingest pipeline. May have any contents.
 	Meta map[string]any `json:"_meta,omitempty" yaml:"_meta,omitempty"`
+
+	sourceFile string
+}
+
+// Path returns the path to the ingest node pipeline file.
+func (p IngestPipeline) Path() string {
+	return p.sourceFile
 }
 
 type Processor struct {
@@ -250,17 +292,24 @@ func (p *Processor) MarshalJSON() ([]byte, error) {
 func Read(path string) (*Integration, error) {
 	integration := &Integration{
 		DataStreams: map[string]*DataStream{},
+		sourceFile:  path,
 	}
 
-	if err := readYAML(filepath.Join(path, "manifest.yml"), &integration.Manifest, true); err != nil {
+	sourceFile := filepath.Join(path, "manifest.yml")
+	if err := readYAML(sourceFile, &integration.Manifest, true); err != nil {
 		return nil, err
 	}
+	integration.Manifest.sourceFile = sourceFile
 
-	if err := readYAML(filepath.Join(path, "_dev/build/build.yml"), &integration.Build, true); err != nil {
+	sourceFile = filepath.Join(path, "_dev/build/build.yml")
+	if err := readYAML(sourceFile, &integration.Build, true); err != nil {
 		// Optional file.
 		if !errors.Is(err, os.ErrNotExist) {
 			return nil, err
 		}
+	}
+	if integration.Build != nil {
+		integration.Build.sourceFile = sourceFile
 	}
 
 	dataStreams, err := filepath.Glob(filepath.Join(path, "data_stream/*/manifest.yml"))
@@ -268,14 +317,17 @@ func Read(path string) (*Integration, error) {
 		return nil, err
 	}
 	for _, manifestPath := range dataStreams {
-		ds := &DataStream{}
-		integration.DataStreams[filepath.Base(filepath.Dir(manifestPath))] = ds
+		ds := &DataStream{
+			sourceDir: filepath.Dir(manifestPath),
+		}
+		integration.DataStreams[filepath.Base(ds.sourceDir)] = ds
 
 		if err := readYAML(manifestPath, &ds.Manifest, true); err != nil {
 			return nil, err
 		}
+		ds.Manifest.sourceFile = manifestPath
 
-		pipelines, err := filepath.Glob(filepath.Join(filepath.Dir(manifestPath), "elasticsearch/ingest_pipeline/*.yml"))
+		pipelines, err := filepath.Glob(filepath.Join(ds.sourceDir, "elasticsearch/ingest_pipeline/*.yml"))
 		if err != nil {
 			return nil, err
 		}
@@ -285,13 +337,15 @@ func Read(path string) (*Integration, error) {
 			if err = readYAML(pipelinePath, &pipeline, true); err != nil {
 				return nil, err
 			}
+			pipeline.sourceFile = pipelinePath
+
 			if ds.Pipelines == nil {
 				ds.Pipelines = map[string]IngestPipeline{}
 			}
 			ds.Pipelines[filepath.Base(pipelinePath)] = pipeline
 		}
 
-		if err = readJSON(filepath.Join(filepath.Dir(manifestPath), "sample_event.json"), &ds.SampleEvent, false); err != nil {
+		if err = readJSON(filepath.Join(ds.sourceDir, "sample_event.json"), &ds.SampleEvent, false); err != nil {
 			if !errors.Is(err, os.ErrNotExist) {
 				return nil, err
 			}
