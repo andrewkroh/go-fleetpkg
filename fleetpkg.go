@@ -45,8 +45,9 @@ type BuildManifest struct {
 }
 
 type DataStream struct {
-	Manifest  DataStreamManifest        `json:"manifest,omitempty" yaml:"manifest,omitempty"`
-	Pipelines map[string]IngestPipeline `json:"pipelines,omitempty" yaml:"pipelines,omitempty"`
+	Manifest    DataStreamManifest        `json:"manifest,omitempty" yaml:"manifest,omitempty"`
+	Pipelines   map[string]IngestPipeline `json:"pipelines,omitempty" yaml:"pipelines,omitempty"`
+	SampleEvent map[string]any            `json:"sample_event,omitempty" yaml:"sample_event,omitempty"`
 }
 
 type Manifest struct {
@@ -289,6 +290,12 @@ func Read(path string) (*Integration, error) {
 			}
 			ds.Pipelines[filepath.Base(pipelinePath)] = pipeline
 		}
+
+		if err = readJSON(filepath.Join(filepath.Dir(manifestPath), "sample_event.json"), &ds.SampleEvent, false); err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				return nil, err
+			}
+		}
 	}
 
 	return integration, nil
@@ -303,6 +310,24 @@ func readYAML(path string, v any, strict bool) error {
 
 	dec := yaml.NewDecoder(f)
 	dec.KnownFields(strict)
+
+	if err := dec.Decode(v); err != nil {
+		return fmt.Errorf("failed decoding %s: %w", path, err)
+	}
+	return nil
+}
+
+func readJSON(path string, v any, strict bool) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	dec := json.NewDecoder(f)
+	if strict {
+		dec.DisallowUnknownFields()
+	}
 
 	if err := dec.Decode(v); err != nil {
 		return fmt.Errorf("failed decoding %s: %w", path, err)
