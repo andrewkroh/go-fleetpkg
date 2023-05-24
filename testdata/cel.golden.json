@@ -1,0 +1,365 @@
+{
+  "build": {
+    "dependencies": {
+      "ecs": {
+        "reference": "git@8.7"
+      }
+    }
+  },
+  "manifest": {
+    "name": "cel",
+    "title": "CEL Custom API",
+    "version": "0.3.0",
+    "description": "Collect custom events from an API with Elastic agent",
+    "type": "input",
+    "format_version": "2.7.0",
+    "categories": [
+      "custom"
+    ],
+    "conditions": {
+      "elastic": {
+        "subscription": "basic"
+      },
+      "kibana": {
+        "version": "^8.7.1"
+      }
+    },
+    "source": {},
+    "policy_templates": [
+      {
+        "name": "cel",
+        "title": "CEL Custom API Input",
+        "description": "Collect custom data from HTTP and file-system APIs.",
+        "type": "logs",
+        "input": "cel",
+        "template_path": "input.yml.hbs",
+        "vars": [
+          {
+            "name": "data_stream.dataset",
+            "default": "cel.cel",
+            "description": "Dataset to write data to. Changing the dataset will send the data to a different index. You can't use `-` in the name of a dataset and only valid characters for [Elasticsearch index names](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html).\n",
+            "type": "text",
+            "title": "Dataset name",
+            "required": true,
+            "show_user": true
+          },
+          {
+            "name": "pipeline",
+            "description": "The Ingest Node pipeline ID to be used by the integration.\n",
+            "type": "text",
+            "title": "Ingest Pipeline",
+            "required": false,
+            "show_user": true
+          },
+          {
+            "name": "resource_url",
+            "default": "https://server.example.com:8089/api",
+            "description": "i.e. scheme://host:port/path",
+            "type": "text",
+            "title": "Resource URL",
+            "required": true,
+            "show_user": true
+          },
+          {
+            "name": "resource_interval",
+            "default": "1m",
+            "description": "How often the API is polled, supports seconds, minutes and hours.",
+            "type": "text",
+            "title": "Resource Interval",
+            "required": true,
+            "show_user": true
+          },
+          {
+            "name": "program",
+            "default": "# // Fetch the agent's public IP every minute and note when the last request was made.\n# // It does not use the Resource URL configuration value.\n# bytes(get(\"https://api.ipify.org/?format=json\").Body).as(body, {\n#     \"events\": [body.decode_json().with({\n#         \"last_requested_at\": has(state.cursor) && has(state.cursor.last_requested_at) ?\n#             state.cursor.last_requested_at\n#         :\n#             now\n#     })],\n#     \"cursor\": {\"last_requested_at\": now}\n# })\n",
+            "description": "Program is the CEL program that is executed each polling period to get and transform the API data.\nMore information can be found in the [documentation](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-cel.html#_execution).\n",
+            "type": "textarea",
+            "title": "The CEL program to be run for each polling.",
+            "multi": false,
+            "required": true,
+            "show_user": true
+          },
+          {
+            "name": "state",
+            "description": "State is the initial state to be provided to the program. If it has a cursor field, that field will be overwritten by any stored cursor, but will be available if no stored cursor exists.\nMore information can be found in the [documentation](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-cel.html#input-state-cel).\n",
+            "type": "yaml",
+            "title": "Initial CEL evaluation state",
+            "multi": false,
+            "required": false,
+            "show_user": true
+          },
+          {
+            "name": "regexp",
+            "default": "#products: '(?i)(Elasticsearch|Beats|Logstash|Kibana)'\n#solutions: '(?i)(Search|Observability|Security)'\n",
+            "description": "Regexps is the set of regular expression to be made available to the program by name. The syntax used is [RE2](https://github.com/google/re2/wiki/Syntax).\nMore information can be found in the [documentation](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-cel.html#regexp-cel).\n",
+            "type": "yaml",
+            "title": "Defined Regular Expressions",
+            "multi": false,
+            "required": false,
+            "show_user": true
+          },
+          {
+            "name": "username",
+            "description": "The username to be used with Basic Auth headers",
+            "type": "text",
+            "title": "Basic Auth Username",
+            "required": false,
+            "show_user": true
+          },
+          {
+            "name": "password",
+            "description": "The password to be used with Basic Auth headers",
+            "type": "password",
+            "title": "Basic Auth Password",
+            "required": false,
+            "show_user": true
+          },
+          {
+            "name": "oauth_id",
+            "description": "Client ID used for Oauth2 authentication",
+            "type": "text",
+            "title": "Oauth2 Client ID",
+            "required": false,
+            "show_user": true
+          },
+          {
+            "name": "oauth_secret",
+            "description": "Client secret used for Oauth2 authentication",
+            "type": "password",
+            "title": "Oauth2 Client Secret",
+            "required": false,
+            "show_user": true
+          },
+          {
+            "name": "oauth_token_url",
+            "description": "The URL endpoint that will be used to generate the tokens during the oauth2 flow. It is required if no oauth_custom variable is set or provider is not specified in oauth_custom variable.",
+            "type": "text",
+            "title": "Oauth2 Token URL",
+            "required": false,
+            "show_user": true
+          },
+          {
+            "name": "resource_ssl",
+            "description": "i.e. certificate_authorities, supported_protocols, verification_mode etc, more examples found in the [documentation](https://www.elastic.co/guide/en/beats/filebeat/current/configuration-ssl.html#ssl-common-config)",
+            "type": "yaml",
+            "title": "Resource SSL Configuration",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_timeout",
+            "description": "Duration before declaring that the HTTP client connection has timed out. Valid time units are ns, us, ms, s, m, h. Default is \"30\"s.",
+            "type": "text",
+            "title": "Resource Timeout",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_proxy_url",
+            "description": "This specifies proxy configuration in the form of `http[s]://<user>:<password>@<server name/ip>:<port>`.",
+            "type": "text",
+            "title": "Resource Proxy",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_retry_max_attempts",
+            "description": "The maximum number of retries for the HTTP client. Default is \"5\".",
+            "type": "text",
+            "title": "Resource Retry Max Attempts",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_retry_wait_min",
+            "description": "The minimum time to wait before a retry is attempted. Default is \"1s\".",
+            "type": "text",
+            "title": "Resource Retry Wait Min",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_retry_wait_max",
+            "description": "The maximum time to wait before a retry is attempted. Default is \"60s\".",
+            "type": "text",
+            "title": "Resource Retry Wait Max",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_redirect_forward_headers",
+            "description": "When set to true resource headers are forwarded in case of a redirect. Default is \"false\".",
+            "type": "bool",
+            "title": "Resource Redirect Forward Headers",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_redirect_headers_ban_list",
+            "description": "When Redirect Forward Headers is set to true, all headers except the ones defined in this list will be forwarded. All headers are forwarded by default.",
+            "type": "text",
+            "title": "Resource Redirect Headers Ban List",
+            "multi": true,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_redirect_max_redirects",
+            "description": "The maximum number of redirects to follow for a resource. Default is \"10\".",
+            "type": "text",
+            "title": "Resource Redirect Max Redirects",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_rate_limit_limit",
+            "description": "The value of the response that specifies the total limit.",
+            "type": "text",
+            "title": "Resource Rate Limit",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "resource_rate_limit_burst",
+            "description": "The maximum burst size. Burst is the maximum number of resource requests that can be made above the overall rate limit.",
+            "type": "text",
+            "title": "Resource Rate Limit Burst",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_provider",
+            "description": "Used to configure supported oauth2 providers. Each supported provider will require specific settings. It is not set by default. Supported providers are \"azure\" and \"google\".",
+            "type": "text",
+            "title": "Oauth2 Provider",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_scopes",
+            "description": "A list of scopes that will be resourceed during the oauth2 flow. It is optional for all providers.",
+            "type": "text",
+            "title": "Oauth2 Scopes",
+            "multi": true,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_google_credentials_file",
+            "description": "The full path to the credentials file for Google.",
+            "type": "text",
+            "title": "Oauth2 Google Credentials File",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_google_credentials_json",
+            "description": "Your Google credentials information as raw JSON.",
+            "type": "text",
+            "title": "Oauth2 Google Credentials JSON",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_google_jwt_file",
+            "description": "Full path to the JWT Account Key file for Google.",
+            "type": "text",
+            "title": "Oauth2 Google JWT File",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_google_jwt_json",
+            "description": "Your Google JWT information as raw JSON.",
+            "type": "text",
+            "title": "Oauth2 Google JWT JSON",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_google_delegated_account",
+            "description": "Email of the delegated account used to create the credentials (usually an admin).",
+            "type": "text",
+            "title": "Oauth2 Google Delegated account",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_azure_tenant_id",
+            "description": "Optional setting used for authentication when using Azure provider. Since it is used in the process to generate the token_url, it can’t be used in combination with it.",
+            "type": "text",
+            "title": "Oauth2 Azure Tenant ID",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_azure_resource",
+            "description": "Optional setting for the accessed WebAPI resource when using azure provider.",
+            "type": "text",
+            "title": "Oauth2 Azure Resource",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "oauth_endpoint_params",
+            "description": "Set of values that will be sent on each resource to the token_url. Each param key can have multiple values. Can be set for all providers except google.",
+            "type": "yaml",
+            "title": "Oauth2 Endpoint Params",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "processors",
+            "description": "Processors are used to reduce the number of fields in the exported event or to enhance the event with metadata. This executes in the agent before the logs are parsed. See [Processors](https://www.elastic.co/guide/en/beats/filebeat/current/filtering-and-enhancing-data.html) for details.\n",
+            "type": "yaml",
+            "title": "Processors",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          },
+          {
+            "name": "tags",
+            "default": [
+              "forwarded"
+            ],
+            "type": "text",
+            "title": "Tags",
+            "multi": true,
+            "show_user": false
+          },
+          {
+            "name": "enable_request_tracer",
+            "description": "The request tracer logs HTTP requests and responses to the agent's local file-system for debugging configurations. Enabling this request tracing compromises security and should only be used for debugging. See [documentation](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-cel.html#_resource_tracer_filename) for details.\n",
+            "type": "bool",
+            "title": "Enable request tracing",
+            "multi": false,
+            "required": false,
+            "show_user": false
+          }
+        ]
+      }
+    ],
+    "owner": {
+      "github": "elastic/security-external-integrations"
+    }
+  }
+}

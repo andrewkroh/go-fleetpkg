@@ -1,0 +1,10 @@
+- name: labels
+  external: ecs
+- name: ecs.version
+  external: ecs
+- name: event.duration
+  external: ecs
+- name: event.kind
+  external: ecs
+- name: service.type
+  external: ecs

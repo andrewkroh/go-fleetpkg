@@ -1,0 +1,251 @@
+build:
+  dependencies:
+    ecs:
+      reference: git@8.7
+manifest:
+  name: hashicorp_vault
+  title: Hashicorp Vault
+  version: 1.10.0
+  release: ga
+  description: Collect logs and metrics from Hashicorp Vault with Elastic Agent.
+  type: integration
+  icons:
+    - src: /img/Vault_VerticalLogo_Color_RGB.svg
+      title: Vault Logo
+      size: 32x32
+      type: image/svg+xml
+  format_version: 1.0.0
+  license: basic
+  categories:
+    - security
+    - iam
+  conditions:
+    kibana:
+      version: ^7.17.0 || ^8.0.0
+  screenshots:
+    - src: /img/hashicorp_vault-audit-dashboard.png
+      title: Audit Log Dashboard
+      size: 2742x2050
+      type: image/png
+    - src: /img/hashicorp_vault-log-dashboard.png
+      title: Audit Log Dashboard
+      size: 2752x1946
+      type: image/png
+  policy_templates:
+    - name: hashicorp_vault
+      title: Hashicorp Vault
+      description: Collect logs and monitor Hashicorp Vault.
+      inputs:
+        - type: logfile
+          title: Logs from file
+          description: Collect Vault logs from file.
+        - type: tcp
+          title: Logs from TCP socket
+          description: Collect Vault audit logs sent via TCP.
+        - type: prometheus/metrics
+          title: Metrics
+          description: Collect Vault metrics via prometheus.
+  owner:
+    github: elastic/security-external-integrations
+data_streams:
+  audit:
+    manifest:
+      title: Hashicorp Vault Audit Logs
+      type: logs
+      streams:
+        - input: logfile
+          description: Collect Vault audit logs from file.
+          title: Audit logs (file audit device)
+          template_path: logfile.yml.hbs
+          vars:
+            - name: paths
+              default:
+                - /var/log/vault/audit*.json*
+              type: text
+              title: Paths
+              multi: true
+              show_user: true
+            - name: preserve_original_event
+              default: false
+              description: Preserves a raw copy of the original event, added to the field `event.original`.
+              type: bool
+              title: Preserve original event
+              multi: false
+              required: true
+              show_user: true
+            - name: tags
+              default:
+                - hashicorp-vault-audit
+              type: text
+              title: Tags
+              multi: true
+              required: true
+              show_user: false
+            - name: processors
+              description: |
+                Processors are used to reduce the number of fields in the exported event or to enhance the event with metadata.  This executes in the agent before the logs are parsed. See [Processors](https://www.elastic.co/guide/en/beats/filebeat/current/filtering-and-enhancing-data.html) for details.
+              type: yaml
+              title: Processors
+              multi: false
+              required: false
+              show_user: false
+        - input: tcp
+          description: Collect Vault audit logs from TCP socket.
+          title: Audit logs (socket audit device)
+          template_path: tcp.yml.hbs
+          vars:
+            - name: listen_address
+              default: localhost
+              description: The bind address to listen for TCP connections. Set to `0.0.0.0` to bind to all available interfaces.
+              type: text
+              title: Listen Address
+              multi: false
+              required: true
+              show_user: true
+            - name: listen_port
+              default: 9007
+              description: The TCP port number to listen on.
+              type: integer
+              title: Listen Port
+              multi: false
+              required: true
+              show_user: true
+            - name: preserve_original_event
+              default: false
+              description: Preserves a raw copy of the original event, added to the field `event.original`.
+              type: bool
+              title: Preserve original event
+              multi: false
+              required: true
+              show_user: true
+            - name: tags
+              default:
+                - hashicorp-vault-audit
+                - forwarded
+              type: text
+              title: Tags
+              multi: true
+              required: true
+              show_user: false
+            - name: processors
+              description: |
+                Processors are used to reduce the number of fields in the exported event or to enhance the event with metadata.  This executes in the agent before the logs are parsed. See [Processors](https://www.elastic.co/guide/en/beats/filebeat/current/filtering-and-enhancing-data.html) for details.
+              type: yaml
+              title: Processors
+              multi: false
+              required: false
+              show_user: false
+          enabled: false
+  log:
+    manifest:
+      title: Hashicorp Vault Operational Logs
+      type: logs
+      streams:
+        - input: logfile
+          description: Collect Vault operational logs from file.
+          title: Operation logs
+          template_path: logfile.yml.hbs
+          vars:
+            - name: paths
+              default:
+                - /var/log/vault/log*.json*
+              type: text
+              title: Paths
+              multi: true
+              show_user: true
+            - name: preserve_original_event
+              default: false
+              description: Preserves a raw copy of the original event, added to the field `event.original`.
+              type: bool
+              title: Preserve original event
+              multi: false
+              required: true
+              show_user: true
+            - name: tags
+              default:
+                - hashicorp-vault-log
+              type: text
+              title: Tags
+              multi: true
+              required: true
+              show_user: false
+            - name: processors
+              description: |
+                Processors are used to reduce the number of fields in the exported event or to enhance the event with metadata.  This executes in the agent before the logs are parsed. See [Processors](https://www.elastic.co/guide/en/beats/filebeat/current/filtering-and-enhancing-data.html) for details.
+              type: yaml
+              title: Processors
+              multi: false
+              required: false
+              show_user: false
+  metrics:
+    manifest:
+      title: Hashicorp Vault Metrics
+      type: metrics
+      streams:
+        - input: prometheus/metrics
+          description: Collect prometheus metrics from Vault.
+          title: Vault metrics (prometheus)
+          template_path: metrics.yml.hbs
+          vars:
+            - name: period
+              default: 30s
+              type: text
+              title: Period
+            - name: hosts
+              default:
+                - http://localhost:8200
+              description: Vault addresses to monitor. `/v1/sys/metrics?format=prometheus` is automatically appended.
+              type: text
+              title: Hosts
+              multi: true
+              required: true
+              show_user: true
+            - name: vault_token
+              description: A Vault token with read access to the /sys/metrics API.
+              type: text
+              title: Vault Token
+              multi: false
+              required: true
+              show_user: true
+            - name: processors
+              description: |
+                Processors are used to reduce the number of fields in the exported event or to enhance the event with metadata. This executes in the agent before the logs are parsed. See [Processors](https://www.elastic.co/guide/en/beats/metricbeat/current/filtering-and-enhancing-data.html) for details.
+              type: yaml
+              title: Processors
+              multi: false
+              required: false
+              show_user: false
+            - name: ssl
+              default: |-
+                #certificate_authorities:
+                #  - |
+                #    -----BEGIN CERTIFICATE-----
+                #    MIIDCjCCAfKgAwIBAgITJ706Mu2wJlKckpIvkWxEHvEyijANBgkqhkiG9w0BAQsF
+                #    -----END CERTIFICATE-----
+              description: i.e. certificate_authorities, supported_protocols, verification_mode etc.
+              type: yaml
+              title: SSL Configuration
+              multi: false
+              required: false
+              show_user: false
+      elasticsearch:
+        index_template:
+          mappings:
+            dynamic: true
+            dynamic_templates:
+              - all_values:
+                  mapping:
+                    type: double
+                  path_match: hashicorp_vault.metrics.*.value
+              - all_counters:
+                  mapping:
+                    type: double
+                  path_match: hashicorp_vault.metrics.*.counter
+              - all_rates:
+                  mapping:
+                    type: double
+                  path_match: hashicorp_vault.metrics.*.rate
+              - all_histograms:
+                  mapping:
+                    type: histogram
+                  path_match: hashicorp_vault.metrics.*.histogram

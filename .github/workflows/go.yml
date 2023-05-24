@@ -1,0 +1,51 @@
+name: go
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.20.x
+
+      - name: go.mod tidy
+        run: go mod tidy && git diff --exit-code
+
+      - name: license header
+        run: go run github.com/elastic/go-licenser@v0.4.1 -d
+
+  test:
+    needs: check
+    strategy:
+      matrix:
+        go:
+          - 1.20.x
+          - 1.18.x
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/checkout@v3
+        with:
+          repository: elastic/integrations
+          path: integrations
+
+      - uses: actions/setup-go@v4
+        id: setup_go
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Test
+        run: go test -v ./...
+        env:
+          INTEGRATIONS_DIR: ./integrations
+
+
