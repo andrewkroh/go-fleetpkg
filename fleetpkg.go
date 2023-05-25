@@ -61,7 +61,7 @@ func (m BuildManifest) Path() string {
 type DataStream struct {
 	Manifest    DataStreamManifest        `json:"manifest,omitempty" yaml:"manifest,omitempty"`
 	Pipelines   map[string]IngestPipeline `json:"pipelines,omitempty" yaml:"pipelines,omitempty"`
-	SampleEvent map[string]any            `json:"sample_event,omitempty" yaml:"sample_event,omitempty"`
+	SampleEvent *SampleEvent              `json:"sample_event,omitempty" yaml:"sample_event,omitempty"`
 
 	sourceDir string
 }
@@ -228,6 +228,16 @@ type Stream struct {
 	Enabled      *bool  `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
+type SampleEvent struct {
+	Event map[string]any `json:"event" yaml:"event"`
+
+	sourceFile string
+}
+
+func (e SampleEvent) Path() string {
+	return e.sourceFile
+}
+
 type IngestPipeline struct {
 	// Description of the ingest pipeline.
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
@@ -345,10 +355,17 @@ func Read(path string) (*Integration, error) {
 			ds.Pipelines[filepath.Base(pipelinePath)] = pipeline
 		}
 
-		if err = readJSON(filepath.Join(ds.sourceDir, "sample_event.json"), &ds.SampleEvent, false); err != nil {
+		// Sample event (optional).
+		s := &SampleEvent{
+			sourceFile: filepath.Join(ds.sourceDir, "sample_event.json"),
+		}
+		if err = readJSON(s.sourceFile, &s.Event, false); err != nil {
 			if !errors.Is(err, os.ErrNotExist) {
 				return nil, err
 			}
+		}
+		if s.Event != nil {
+			ds.SampleEvent = s
 		}
 	}
 
