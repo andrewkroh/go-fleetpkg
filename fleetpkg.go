@@ -193,6 +193,21 @@ type Var struct {
 	Required    *bool    `json:"required,omitempty" yaml:"required,omitempty"`
 	ShowUser    *bool    `json:"show_user,omitempty" yaml:"show_user,omitempty"`
 	Options     []Option `json:"options,omitempty" yaml:"options,omitempty"` // List of options for 'type: select'.
+
+	FileMetadata `json:"-" yaml:"-"`
+}
+
+func (f *Var) UnmarshalYAML(value *yaml.Node) error {
+	// Prevent recursion by creating a new type that does not implement Unmarshaler.
+	type notVar Var
+	x := (*notVar)(f)
+
+	if err := value.Decode(&x); err != nil {
+		return err
+	}
+	f.FileMetadata.line = value.Line
+	f.FileMetadata.column = value.Column
+	return nil
 }
 
 type Option struct {
@@ -294,11 +309,11 @@ func (p IngestPipeline) Path() string {
 
 type Processor struct {
 	Type       string
-	Attributes map[string]interface{}
+	Attributes map[string]any
 }
 
 func (p *Processor) UnmarshalYAML(value *yaml.Node) error {
-	var procMap map[string]map[string]interface{}
+	var procMap map[string]map[string]any
 	if err := value.Decode(&procMap); err != nil {
 		return err
 	}
@@ -339,6 +354,7 @@ func Read(path string) (*Integration, error) {
 		return nil, err
 	}
 	integration.Manifest.sourceFile = sourceFile
+	annotateFileMetadata(integration.Manifest.sourceFile, &integration.Manifest)
 
 	sourceFile = filepath.Join(path, "_dev/build/build.yml")
 	if err := readYAML(sourceFile, &integration.Build, true); err != nil {
@@ -365,6 +381,7 @@ func Read(path string) (*Integration, error) {
 			return nil, err
 		}
 		ds.Manifest.sourceFile = manifestPath
+		annotateFileMetadata(ds.Manifest.sourceFile, &ds.Manifest)
 
 		pipelines, err := filepath.Glob(filepath.Join(ds.sourceDir, "elasticsearch/ingest_pipeline/*.yml"))
 		if err != nil {

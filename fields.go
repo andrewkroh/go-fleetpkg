@@ -64,24 +64,7 @@ type Field struct {
 	// explicitly specified in the package-spec and are not used by Fleet.
 	AdditionalAttributes map[string]any `json:"_additional_attributes,omitempty" yaml:",inline"`
 
-	sourceFile   string
-	sourceLine   int
-	sourceColumn int
-}
-
-// Path returns the path to field's source.
-func (f *Field) Path() string {
-	return f.sourceFile
-}
-
-// Line return the line number of the field definition.
-func (f *Field) Line() int {
-	return f.sourceLine
-}
-
-// Column return the column number of the field definition.
-func (f *Field) Column() int {
-	return f.sourceColumn
+	FileMetadata `json:"-" yaml:"-"`
 }
 
 func (f *Field) UnmarshalYAML(value *yaml.Node) error {
@@ -92,8 +75,8 @@ func (f *Field) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&x); err != nil {
 		return err
 	}
-	f.sourceLine = value.Line
-	f.sourceColumn = value.Column
+	f.FileMetadata.line = value.Line
+	f.FileMetadata.column = value.Column
 	return nil
 }
 
@@ -134,10 +117,7 @@ func readFields(path string) ([]Field, error) {
 		return nil, fmt.Errorf("failed reading from %q: %w", path, err)
 	}
 
-	for i := range fields {
-		fields[i].sourceFile = path
-	}
-
+	annotateFileMetadata(path, &fields)
 	return fields, err
 }
 

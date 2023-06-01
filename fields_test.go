@@ -63,13 +63,20 @@ func TestReadFields(t *testing.T) {
 		t.Fatalf("got %d, want %d fields", len(allFields), expected)
 	}
 
-	if allFields[0].sourceFile == "" {
-		t.Errorf("sourceFile is empty")
+	allFields, err = FlattenFields(allFields)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if allFields[0].sourceLine == 0 {
-		t.Errorf("sourceLine is empty")
-	}
-	if allFields[0].sourceColumn == 0 {
-		t.Errorf("sourceColumn is empty")
+
+	for _, f := range allFields {
+		if f.Path() == "" {
+			t.Errorf("sourceFile is empty")
+		}
+		if f.Line() == 0 {
+			t.Errorf("sourceLine is empty")
+		}
+		if f.Column() == 0 {
+			t.Errorf("sourceColumn is empty")
+		}
 	}
 }
