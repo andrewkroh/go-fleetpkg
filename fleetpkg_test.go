@@ -74,7 +74,7 @@ func TestAllIntegrations(t *testing.T) {
 	for _, pkgPath := range packages {
 		_, err := Read(pkgPath)
 		if err != nil {
-			t.Fatalf("failed reading from %v: %v", pkgPath, err)
+			t.Errorf("failed reading from %v: %v", pkgPath, err)
 		}
 		count++
 	}

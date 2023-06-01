@@ -62,6 +62,7 @@ type DataStream struct {
 	Manifest    DataStreamManifest        `json:"manifest,omitempty" yaml:"manifest,omitempty"`
 	Pipelines   map[string]IngestPipeline `json:"pipelines,omitempty" yaml:"pipelines,omitempty"`
 	SampleEvent *SampleEvent              `json:"sample_event,omitempty" yaml:"sample_event,omitempty"`
+	Fields      map[string]FieldsFile     `json:"fields,omitempty" yaml:"fields,omitempty"`
 
 	sourceDir string
 }
@@ -69,6 +70,34 @@ type DataStream struct {
 // Path returns the path to the data stream dir.
 func (ds DataStream) Path() string {
 	return ds.sourceDir
+}
+
+// AllFields returns a slice containing all fields declared in the DataStream.
+func (ds DataStream) AllFields() []Field {
+	var count int
+	for _, ff := range ds.Fields {
+		count += len(ff.Fields)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	out := make([]Field, 0, count)
+	for _, ff := range ds.Fields {
+		out = append(out, ff.Fields...)
+	}
+	return out
+}
+
+type FieldsFile struct {
+	Fields []Field `json:"fields" yaml:"fields"`
+
+	sourceFile string
+}
+
+// Path returns the path to the fields file.
+func (f FieldsFile) Path() string {
+	return f.sourceFile
 }
 
 type Manifest struct {
@@ -366,6 +395,27 @@ func Read(path string) (*Integration, error) {
 		}
 		if s.Event != nil {
 			ds.SampleEvent = s
+		}
+
+		// Fields files.
+		fieldsFiles, err := filepath.Glob(filepath.Join(ds.sourceDir, "fields/*.yml"))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, fieldsFilePath := range fieldsFiles {
+			fields, err := readFields(fieldsFilePath)
+			if err != nil {
+				return nil, err
+			}
+
+			if ds.Fields == nil {
+				ds.Fields = map[string]FieldsFile{}
+			}
+			ds.Fields[filepath.Base(fieldsFilePath)] = FieldsFile{
+				Fields:     fields,
+				sourceFile: fieldsFilePath,
+			}
 		}
 	}
 

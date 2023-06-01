@@ -354,6 +354,306 @@ data_streams:
         tags:
           - preserve_original_event
           - hashicorp-vault-audit
+    fields:
+      agent.yml:
+        fields:
+          - name: input.type
+            type: keyword
+          - name: log.offset
+            type: long
+          - name: log.source.address
+            type: keyword
+            description: Source address (IP and port) of the log message.
+      base-fields.yml:
+        fields:
+          - name: data_stream.type
+            type: constant_keyword
+            description: Data stream type.
+          - name: data_stream.dataset
+            type: constant_keyword
+            description: Data stream dataset.
+          - name: data_stream.namespace
+            type: constant_keyword
+            description: Data stream namespace.
+          - name: '@timestamp'
+            type: date
+            description: Event timestamp.
+          - name: event.module
+            type: constant_keyword
+            description: Event module
+            value: hashicorp_vault
+          - name: event.dataset
+            type: constant_keyword
+            description: Event dataset
+            value: hashicorp_vault.audit
+      ecs.yml:
+        fields:
+          - name: ecs.version
+            external: ecs
+          - name: event.action
+            external: ecs
+          - name: event.category
+            external: ecs
+          - name: event.id
+            external: ecs
+          - name: event.kind
+            external: ecs
+          - name: event.original
+            external: ecs
+          - name: event.outcome
+            external: ecs
+          - name: event.type
+            external: ecs
+          - name: message
+            external: ecs
+          - name: tags
+            external: ecs
+          - name: log.file.path
+            external: ecs
+          - name: related.ip
+            external: ecs
+          - name: source.as.number
+            external: ecs
+          - name: source.as.organization.name
+            external: ecs
+          - name: source.ip
+            external: ecs
+          - name: source.geo.city_name
+            external: ecs
+          - name: source.geo.continent_name
+            external: ecs
+          - name: source.geo.country_iso_code
+            external: ecs
+          - name: source.geo.country_name
+            external: ecs
+          - name: source.geo.location
+            external: ecs
+          - name: source.geo.region_iso_code
+            external: ecs
+          - name: source.geo.region_name
+            external: ecs
+          - name: source.port
+            external: ecs
+          - name: user.email
+            external: ecs
+          - name: user.id
+            external: ecs
+      fields.yml:
+        fields:
+          - name: hashicorp_vault
+            type: group
+            fields:
+              - name: audit
+                type: group
+                fields:
+                  - name: auth
+                    type: group
+                    fields:
+                      - name: accessor
+                        type: keyword
+                        description: This is an HMAC of the client token accessor
+                      - name: client_token
+                        type: keyword
+                        description: This is an HMAC of the client's token ID.
+                      - name: display_name
+                        type: keyword
+                        description: |
+                          Display name is a non-security sensitive identifier that is applicable to this auth. It is used for logging and prefixing of dynamic secrets. For example, it may be "armon" for the github credential backend. If the client token is used to generate a SQL credential, the user may be "github-armon-uuid". This is to help identify the source without using audit tables.
+                      - name: entity_id
+                        type: keyword
+                        description: |
+                          Entity ID is the identifier of the entity in identity store to which the identity of the authenticating client belongs to.
+                      - name: external_namespace_policies
+                        type: flattened
+                        description: External namespace policies represent the policies authorized from different namespaces indexed by respective namespace identifiers.
+                      - name: identity_policies
+                        type: keyword
+                        description: These are the policies sourced from the identity.
+                      - name: metadata
+                        type: flattened
+                        description: This will contain a list of metadata key/value pairs associated with the authenticated user.
+                      - name: no_default_policy
+                        type: boolean
+                        description: |
+                          Indicates that the default policy should not be added by core when creating a token. The default policy will still be added if it's explicitly defined.
+                      - name: policies
+                        type: keyword
+                        description: Policies is the list of policies that the authenticated user is associated with.
+                      - name: policy_results.allowed
+                        type: boolean
+                      - name: policy_results.granting_policies
+                        type: array
+                        object_type: object
+                      - name: policy_results.granting_policies.name
+                        type: keyword
+                      - name: policy_results.granting_policies.namespace_id
+                        type: keyword
+                      - name: policy_results.granting_policies.type
+                        type: keyword
+                      - name: remaining_uses
+                        type: long
+                      - name: token_issue_time
+                        type: date
+                      - name: token_policies
+                        type: keyword
+                        description: These are the policies sourced from the token.
+                      - name: token_ttl
+                        type: long
+                      - name: token_type
+                        type: keyword
+                  - name: entity_created
+                    type: boolean
+                    description: entity_created is set to true if an entity is created as part of a login request.
+                  - name: error
+                    type: keyword
+                    description: If an error occurred with the request, the error message is included in this field's value.
+                  - name: request
+                    type: group
+                    fields:
+                      - name: client_certificate_serial_number
+                        type: keyword
+                        description: Serial number from the client's certificate.
+                      - name: client_id
+                        type: keyword
+                      - name: client_token
+                        type: keyword
+                        description: This is an HMAC of the client's token ID.
+                      - name: client_token_accessor
+                        type: keyword
+                        description: This is an HMAC of the client token accessor.
+                      - name: data
+                        type: flattened
+                        description: The data object will contain secret data in key/value pairs.
+                      - name: headers
+                        type: flattened
+                        description: Additional HTTP headers specified by the client as part of the request.
+                      - name: id
+                        type: keyword
+                        description: This is the unique request identifier.
+                      - name: mount_accessor
+                        type: keyword
+                      - name: mount_type
+                        type: keyword
+                      - name: namespace.id
+                        type: keyword
+                      - name: namespace.path
+                        type: keyword
+                      - name: operation
+                        type: keyword
+                        description: |
+                          This is the type of operation which corresponds to path capabilities and is expected to be one of: create, read, update, delete, or list.
+                      - name: path
+                        type: keyword
+                        description: The requested Vault path for operation.
+                        multi_fields:
+                          - name: text
+                            type: text
+                      - name: policy_override
+                        type: boolean
+                        description: |
+                          Policy override indicates that the requestor wishes to override soft-mandatory Sentinel policies.
+                      - name: remote_address
+                        type: ip
+                        description: The IP address of the client making the request.
+                      - name: remote_port
+                        type: long
+                        description: The remote port of the client making the request.
+                      - name: replication_cluster
+                        type: keyword
+                        description: Name given to the replication secondary where this request originated.
+                      - name: wrap_ttl
+                        type: long
+                        description: If the token is wrapped, this displays configured wrapped TTL in seconds.
+                  - name: response
+                    type: group
+                    fields:
+                      - name: auth
+                        type: group
+                        description: Authentication information for this response.
+                        fields:
+                          - name: accessor
+                            type: keyword
+                          - name: client_token
+                            type: keyword
+                          - name: display_name
+                            type: keyword
+                          - name: entity_id
+                            type: keyword
+                          - name: external_namespace_policies
+                            type: flattened
+                          - name: identity_policies
+                            type: keyword
+                          - name: metadata
+                            type: flattened
+                          - name: no_default_policy
+                            type: boolean
+                          - name: num_uses
+                            type: long
+                          - name: policies
+                            type: keyword
+                          - name: token_issue_time
+                            type: date
+                          - name: token_policies
+                            type: keyword
+                          - name: token_ttl
+                            type: long
+                            description: Time to live for the token in seconds.
+                          - name: token_type
+                            type: keyword
+                      - name: data
+                        type: flattened
+                        description: Response payload.
+                      - name: headers
+                        type: flattened
+                        description: |
+                          Headers will contain the http headers from the plugin that it wishes to have as part of the output.
+                      - name: mount_accessor
+                        type: keyword
+                      - name: mount_type
+                        type: keyword
+                      - name: redirect
+                        type: keyword
+                        description: |
+                          Redirect is an HTTP URL to redirect to for further authentication. This is only valid for credential backends. This will be blanked for any logical backend and ignored.
+                      - name: warnings
+                        type: keyword
+                      - name: wrap_info
+                        type: group
+                        description: Information for wrapping the response in a cubbyhole.
+                        fields:
+                          - name: accessor
+                            type: keyword
+                            description: The token accessor for the wrapped response token.
+                          - name: creation_path
+                            type: keyword
+                            description: Creation path is the original request path that was used to create the wrapped response.
+                          - name: creation_time
+                            type: date
+                            description: The creation time. This can be used with the TTL to figure out an expected expiration.
+                          - name: token
+                            type: keyword
+                            description: The token containing the wrapped response.
+                          - name: ttl
+                            type: long
+                            description: Specifies the desired TTL of the wrapping token.
+                          - name: wrapped_accessor
+                            type: keyword
+                            description: The token accessor for the wrapped response token.
+                  - name: type
+                    type: keyword
+                    description: Audit record type (request or response).
+          - name: nomad.allocation.id
+            type: keyword
+            description: Nomad allocation ID
+          - name: nomad.namespace
+            type: keyword
+            description: Nomad namespace.
+          - name: nomad.node.id
+            type: keyword
+            description: Nomad node ID.
+          - name: nomad.task.name
+            type: keyword
+            description: Nomad task name.
   log:
     manifest:
       title: Hashicorp Vault Operational Logs
@@ -529,6 +829,62 @@ data_streams:
         tags:
           - preserve_original_event
           - hashicorp-vault-log
+    fields:
+      agent.yml:
+        fields:
+          - name: input.type
+            type: keyword
+          - name: log.offset
+            type: long
+      base-fields.yml:
+        fields:
+          - name: data_stream.type
+            type: constant_keyword
+            description: Data stream type.
+          - name: data_stream.dataset
+            type: constant_keyword
+            description: Data stream dataset.
+          - name: data_stream.namespace
+            type: constant_keyword
+            description: Data stream namespace.
+          - name: '@timestamp'
+            type: date
+            description: Event timestamp.
+          - name: event.module
+            type: constant_keyword
+            description: Event module
+            value: hashicorp_vault
+          - name: event.dataset
+            type: constant_keyword
+            description: Event dataset
+            value: hashicorp_vault.log
+      ecs.yml:
+        fields:
+          - name: ecs.version
+            external: ecs
+          - name: event.kind
+            external: ecs
+          - name: event.original
+            external: ecs
+          - name: message
+            external: ecs
+          - name: tags
+            external: ecs
+          - name: log.file.path
+            external: ecs
+          - name: log.level
+            external: ecs
+          - name: log.logger
+            external: ecs
+          - name: file.path
+            external: ecs
+      fields.yml:
+        fields:
+          - name: hashicorp_vault
+            type: group
+            fields:
+              - name: log
+                type: flattened
   metrics:
     manifest:
       title: Hashicorp Vault Metrics
@@ -766,3 +1122,85 @@ data_streams:
           period: 5000
         service:
           type: hashicorp_vault
+    fields:
+      base-fields.yml:
+        fields:
+          - name: data_stream.type
+            type: constant_keyword
+            description: Data stream type.
+          - name: data_stream.dataset
+            type: constant_keyword
+            description: Data stream dataset.
+          - name: data_stream.namespace
+            type: constant_keyword
+            description: Data stream namespace.
+          - name: '@timestamp'
+            type: date
+            description: Event timestamp.
+          - name: event.module
+            type: constant_keyword
+            description: Event module
+            value: hashicorp_vault
+          - name: event.dataset
+            type: constant_keyword
+            description: Event dataset
+            value: hashicorp_vault.metrics
+      ecs.yml:
+        fields:
+          - name: labels
+            external: ecs
+          - name: ecs.version
+            external: ecs
+          - name: event.duration
+            external: ecs
+          - name: event.kind
+            external: ecs
+          - name: service.type
+            external: ecs
+      fields.yml:
+        fields:
+          - name: hashicorp_vault.metrics.*.*
+            description: Hashicorp Vault telemetry data from the Prometheus endpoint.
+            dynamic: "true"
+          - name: labels
+            type: group
+            fields:
+              - name: auth_method
+                type: keyword
+                description: Authorization engine type.
+              - name: cluster
+                type: keyword
+                description: |
+                  The cluster name from which the metric originated; set in the configuration file, or automatically generated when a cluster is created.
+              - name: creation_ttl
+                type: keyword
+                description: |
+                  Time-to-live value assigned to a token or lease at creation. This value is rounded up to the next-highest bucket; the available buckets are 1m, 10m, 20m, 1h, 2h, 1d, 2d, 7d, and 30d. Any longer TTL is assigned the value +Inf.
+              - name: host
+                type: keyword
+              - name: instance
+                type: keyword
+              - name: job
+                type: keyword
+              - name: local
+                type: keyword
+              - name: mount_point
+                type: keyword
+                description: Path at which an auth method or secret engine is mounted.
+              - name: namespace
+                type: keyword
+                description: A namespace path, or root for the root namespace
+              - name: quantile
+                type: keyword
+              - name: queue_id
+                type: keyword
+              - name: term
+                type: keyword
+              - name: token_type
+                type: keyword
+                description: Identifies whether the token is a batch token or a service token.
+                example: service
+              - name: type
+                type: keyword
+              - name: version
+                type: keyword
