@@ -246,16 +246,73 @@ type Owner struct {
 }
 
 type DataStreamManifest struct {
-	Dataset         string         `json:"dataset,omitempty" yaml:"dataset,omitempty"`
-	DatasetIsPrefix *bool          `json:"dataset_is_prefix,omitempty" yaml:"dataset_is_prefix,omitempty"`
-	ILMPolicy       string         `json:"ilm_policy,omitempty" yaml:"ilm_policy,omitempty"`
-	Release         string         `json:"release,omitempty" yaml:"release,omitempty"`
-	Title           string         `json:"title,omitempty" yaml:"title,omitempty"`
-	Type            string         `json:"type,omitempty" yaml:"type,omitempty"`
-	Streams         []Stream       `json:"streams,omitempty" yaml:"streams,omitempty"`
-	Elasticsearch   map[string]any `json:"elasticsearch,omitempty" yaml:"elasticsearch,omitempty"`
+	Dataset         string                 `json:"dataset,omitempty" yaml:"dataset,omitempty"`
+	DatasetIsPrefix *bool                  `json:"dataset_is_prefix,omitempty" yaml:"dataset_is_prefix,omitempty"`
+	ILMPolicy       string                 `json:"ilm_policy,omitempty" yaml:"ilm_policy,omitempty"`
+	Release         string                 `json:"release,omitempty" yaml:"release,omitempty"`
+	Title           string                 `json:"title,omitempty" yaml:"title,omitempty"`
+	Type            string                 `json:"type,omitempty" yaml:"type,omitempty"`
+	Streams         []Stream               `json:"streams,omitempty" yaml:"streams,omitempty"`
+	Elasticsearch   *ElasticsearchSettings `json:"elasticsearch,omitempty" yaml:"elasticsearch,omitempty"`
 
 	sourceFile string
+}
+
+type ElasticsearchSettings struct {
+	IndexMode        string                   `json:"index_mode,omitempty" yaml:"index_mode,omitempty"`
+	IndexTemplate    *IndexTemplateOptions    `json:"index_template,omitempty" yaml:"index_template,omitempty"`
+	Privileges       *ElasticsearchPrivileges `json:"privileges,omitempty" yaml:"privileges,omitempty"`
+	SourceMode       string                   `json:"source_mode,omitempty" yaml:"source_mode,omitempty"`
+	DynamicDataset   *bool                    `json:"dynamic_dataset,omitempty" yaml:"dynamic_dataset,omitempty"`
+	DynamicNamespace *bool                    `json:"dynamic_namespace,omitempty" yaml:"dynamic_namespace,omitempty"`
+}
+
+type IndexTemplateOptions struct {
+	Settings       map[string]any         `json:"settings,omitempty" yaml:"settings,omitempty"`
+	Mappings       map[string]any         `json:"mappings,omitempty" yaml:"mappings,omitempty"`
+	IngestPipeline *IngestPipelineOptions `json:"ingest_pipeline,omitempty" yaml:"ingest_pipeline,omitempty"`
+	DataStream     *DataStreamOptions     `json:"data_stream,omitempty" yaml:"data_stream,omitempty"`
+}
+
+type IngestPipelineOptions struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
+type DataStreamOptions struct {
+	Hidden *bool `json:"hidden,omitempty" yaml:"hidden,omitempty"`
+}
+
+type ElasticsearchPrivileges struct {
+	Properties []string `json:"properties,omitempty" yaml:"properties,omitempty"`
+}
+
+func (m *DataStreamManifest) UnmarshalYAML(value *yaml.Node) error {
+	type embeddedOptions DataStreamManifest // Type alias to prevent recursion.
+	type permissiveOptions struct {
+		DynamicDataset   *bool `yaml:"elasticsearch.dynamic_dataset"`
+		DynamicNamespace *bool `yaml:"elasticsearch.dynamic_namespace"`
+		embeddedOptions  `yaml:",inline"`
+	}
+
+	var options permissiveOptions
+	if err := value.Decode(&options); err != nil {
+		return err
+	}
+	*m = DataStreamManifest(options.embeddedOptions)
+
+	if options.DynamicNamespace != nil {
+		if m.Elasticsearch == nil {
+			m.Elasticsearch = &ElasticsearchSettings{}
+		}
+		m.Elasticsearch.DynamicNamespace = options.DynamicNamespace
+	}
+	if options.DynamicDataset != nil {
+		if m.Elasticsearch == nil {
+			m.Elasticsearch = &ElasticsearchSettings{}
+		}
+		m.Elasticsearch.DynamicDataset = options.DynamicDataset
+	}
+	return nil
 }
 
 // Path returns the path to the data stream manifest.yml.
