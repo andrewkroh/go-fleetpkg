@@ -1,6 +1,8 @@
 name: go
 
 on:
+  schedule:
+    - cron: '0 15 * * *'
   pull_request:
   push:
     branches:
