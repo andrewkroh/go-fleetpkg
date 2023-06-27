@@ -167,6 +167,17 @@ func flattenField(key []string, f Field) ([]Field, error) {
 		flat = append(flat, tmpFlats...)
 	}
 
+	// I would consider this to be an incorrect definition to
+	// have sub-fields in a field not declared as a type=group.
+	// This will include those fields in the list in order to not
+	// mask bad definitions.
+	if f.Type != "" && f.Type != "group" {
+		parent := f
+		parent.Name = strings.Join(parentName, ".")
+		parent.Fields = nil
+		flat = append(flat, parent)
+	}
+
 	return flat, nil
 }
 
