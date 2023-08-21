@@ -191,6 +191,7 @@ type Var struct {
 	Title       string   `json:"title,omitempty" yaml:"title,omitempty"`
 	Multi       *bool    `json:"multi,omitempty" yaml:"multi,omitempty"`
 	Required    *bool    `json:"required,omitempty" yaml:"required,omitempty"`
+	Secret      *bool    `json:"secret,omitempty" yaml:"secret,omitempty"`
 	ShowUser    *bool    `json:"show_user,omitempty" yaml:"show_user,omitempty"`
 	Options     []Option `json:"options,omitempty" yaml:"options,omitempty"` // List of options for 'type: select'.
 
