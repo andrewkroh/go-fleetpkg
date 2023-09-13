@@ -20,9 +20,9 @@ package fleetpkg
 import "reflect"
 
 type FileMetadata struct {
-	file   string `json:"-"` // file from which field was read.
-	line   int    `json:"-"` // line from which field was read.
-	column int    `json:"-"` // column from which field was read.
+	file   string // file from which field was read.
+	line   int    // line from which field was read.
+	column int    // column from which field was read.
 }
 
 func (m FileMetadata) Path() string { return m.file }
