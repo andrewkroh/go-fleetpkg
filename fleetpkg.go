@@ -31,6 +31,7 @@ type Integration struct {
 	Build       *BuildManifest         `json:"build,omitempty" yaml:"build,omitempty"`
 	Manifest    Manifest               `json:"manifest,omitempty" yaml:"manifest,omitempty"`
 	DataStreams map[string]*DataStream `json:"data_streams,omitempty" yaml:"data_streams,omitempty"`
+	Changelog   Changelog              `json:"changelog,omitempty" yaml:"changelog,omitempty"`
 
 	sourceFile string
 }
@@ -413,6 +414,13 @@ func Read(path string) (*Integration, error) {
 	}
 	integration.Manifest.sourceFile = sourceFile
 	annotateFileMetadata(integration.Manifest.sourceFile, &integration.Manifest)
+
+	sourceFile = filepath.Join(path, "changelog.yml")
+	if err := readYAML(sourceFile, &integration.Changelog, true); err != nil {
+		return nil, err
+	}
+	integration.Changelog.sourceFile = sourceFile
+	annotateFileMetadata(integration.Changelog.sourceFile, &integration.Changelog)
 
 	sourceFile = filepath.Join(path, "_dev/build/build.yml")
 	if err := readYAML(sourceFile, &integration.Build, true); err != nil {
