@@ -245,6 +245,7 @@ type PolicyTemplate struct {
 
 type Owner struct {
 	Github string `json:"github,omitempty" yaml:"github,omitempty"`
+	Type   string `json:"type,omitempty" yaml:"type,omitempty"` // Describes who owns the package and the level of support that is provided. Value may be elastic, partner, or community.
 }
 
 type DataStreamManifest struct {
