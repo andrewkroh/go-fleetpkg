@@ -18,6 +18,7 @@
 package fleetpkg
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -77,6 +78,10 @@ func TestReadFields(t *testing.T) {
 		}
 		if f.Column() == 0 {
 			t.Errorf("sourceColumn is empty")
+		}
+		fmt.Printf("%s:%d:%d %s - %s\n", f.Path(), f.Line(), f.Column(), f.Name, f.YAMLPath)
+		if f.YAMLPath == "" {
+			t.Errorf("YAMLPath is empty")
 		}
 	}
 }
