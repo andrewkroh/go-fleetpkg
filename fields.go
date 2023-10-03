@@ -65,6 +65,8 @@ type Field struct {
 	AdditionalAttributes map[string]any `json:"_additional_attributes,omitempty" yaml:",inline"`
 
 	FileMetadata `json:"-" yaml:"-"`
+
+	YAMLPath string `json:"-" yaml:"-"` // YAML path
 }
 
 func (f *Field) UnmarshalYAML(value *yaml.Node) error {
@@ -117,8 +119,20 @@ func readFields(path string) ([]Field, error) {
 		return nil, fmt.Errorf("failed reading from %q: %w", path, err)
 	}
 
+	for i := range fields {
+		annotateYAMLPath(fmt.Sprintf("$[%d]", i), &fields[i])
+	}
 	annotateFileMetadata(path, &fields)
+
 	return fields, err
+}
+
+// annotateYAMLPath sets the YAML path of each field.
+func annotateYAMLPath(yamlPath string, field *Field) {
+	field.YAMLPath = yamlPath
+	for i := range field.Fields {
+		annotateYAMLPath(fmt.Sprintf("%s.fields[%d]", yamlPath, i), &field.Fields[i])
+	}
 }
 
 // FlattenFields returns a flat representation of the fields. It
