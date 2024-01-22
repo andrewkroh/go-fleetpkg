@@ -58,7 +58,7 @@ type Field struct {
 	Normalize             []string `json:"normalize,omitempty" yaml:"normalize,omitempty"`
 	Normalizer            string   `json:"normalizer,omitempty" yaml:"normalizer,omitempty"`
 	IncludeInParent       *bool    `json:"include_in_parent,omitempty" yaml:"include_in_parent,omitempty"`
-	DefaultMetric         bool     `json:"default_metric,omitempty" yaml:"default_metric,omitempty"`
+	DefaultMetric         string   `json:"default_metric,omitempty" yaml:"default_metric,omitempty"`
 
 	// AdditionalProperties contains additional properties that are not
 	// explicitly specified in the package-spec and are not used by Fleet.
