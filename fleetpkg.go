@@ -102,22 +102,24 @@ func (f FieldsFile) Path() string {
 }
 
 type Manifest struct {
-	Name            string           `json:"name,omitempty" yaml:"name,omitempty"`
-	Title           string           `json:"title,omitempty" yaml:"title,omitempty"`
-	Version         string           `json:"version,omitempty" yaml:"version,omitempty"`
-	Release         string           `json:"release,omitempty" yaml:"release,omitempty"`
-	Description     string           `json:"description,omitempty" yaml:"description,omitempty"`
-	Type            string           `json:"type,omitempty" yaml:"type,omitempty"`
-	Icons           []Icons          `json:"icons,omitempty" yaml:"icons,omitempty"`
-	FormatVersion   string           `json:"format_version,omitempty" yaml:"format_version,omitempty"`
-	License         string           `json:"license,omitempty" yaml:"license,omitempty"`
-	Categories      []string         `json:"categories,omitempty" yaml:"categories,omitempty"`
-	Conditions      Conditions       `json:"conditions,omitempty" yaml:"conditions,omitempty"`
-	Screenshots     []Screenshots    `json:"screenshots,omitempty" yaml:"screenshots,omitempty"`
-	Source          Source           `json:"source,omitempty" yaml:"source,omitempty"`
-	Vars            []Var            `json:"vars,omitempty" yaml:"vars,omitempty"`
-	PolicyTemplates []PolicyTemplate `json:"policy_templates,omitempty" yaml:"policy_templates,omitempty"`
-	Owner           Owner            `json:"owner,omitempty" yaml:"owner,omitempty"`
+	Name            string                     `json:"name,omitempty" yaml:"name,omitempty"`
+	Title           string                     `json:"title,omitempty" yaml:"title,omitempty"`
+	Version         string                     `json:"version,omitempty" yaml:"version,omitempty"`
+	Release         string                     `json:"release,omitempty" yaml:"release,omitempty"`
+	Description     string                     `json:"description,omitempty" yaml:"description,omitempty"`
+	Type            string                     `json:"type,omitempty" yaml:"type,omitempty"`
+	Icons           []Icons                    `json:"icons,omitempty" yaml:"icons,omitempty"`
+	FormatVersion   string                     `json:"format_version,omitempty" yaml:"format_version,omitempty"`
+	License         string                     `json:"license,omitempty" yaml:"license,omitempty"`
+	Categories      []string                   `json:"categories,omitempty" yaml:"categories,omitempty"`
+	Conditions      Conditions                 `json:"conditions,omitempty" yaml:"conditions,omitempty"`
+	Screenshots     []Screenshots              `json:"screenshots,omitempty" yaml:"screenshots,omitempty"`
+	Source          Source                     `json:"source,omitempty" yaml:"source,omitempty"`
+	Vars            []Var                      `json:"vars,omitempty" yaml:"vars,omitempty"`
+	PolicyTemplates []PolicyTemplate           `json:"policy_templates,omitempty" yaml:"policy_templates,omitempty"`
+	Owner           Owner                      `json:"owner,omitempty" yaml:"owner,omitempty"`
+	Elasticsearch   *ElasticsearchRequirements `json:"elasticsearch,omitempty" yaml:"elasticsearch,omitempty"`
+	Agent           *AgentRequirements         `json:"agent,omitempty" yaml:"agent,omitempty"`
 
 	sourceFile string
 }
@@ -125,6 +127,25 @@ type Manifest struct {
 // Path returns the path to the integration manifest.yml.
 func (m Manifest) Path() string {
 	return m.sourceFile
+}
+
+type ElasticsearchRequirements struct {
+	Privileges ElasticsearchPrivilegeRequirements `json:"privileges,omitempty" yaml:"privileges,omitempty"`
+}
+
+type ElasticsearchPrivilegeRequirements struct {
+	// Cluster privilege requirements.
+	Cluster []string `json:"cluster,omitempty" yaml:"cluster,omitempty"`
+}
+
+// AgentRequirements declares related Agent configurations or requirements.
+type AgentRequirements struct {
+	Privileges AgentPrivilegeRequirements `json:"privileges,omitempty" yaml:"privileges,omitempty"`
+}
+
+type AgentPrivilegeRequirements struct {
+	// Set to true if collection requires root privileges in the agent.
+	Root bool `json:"root,omitempty" yaml:"root,omitempty"`
 }
 
 type Source struct {
