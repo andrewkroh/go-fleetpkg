@@ -473,13 +473,13 @@ func Read(path string) (*Integration, error) {
 			integration.Input = ds
 		} else {
 			integration.DataStreams[filepath.Base(ds.sourceDir)] = ds
-		}
 
-		if err := readYAML(manifestPath, &ds.Manifest, true); err != nil {
-			return nil, err
+			if err := readYAML(manifestPath, &ds.Manifest, true); err != nil {
+				return nil, err
+			}
+			ds.Manifest.sourceFile = manifestPath
+			annotateFileMetadata(ds.Manifest.sourceFile, &ds.Manifest)
 		}
-		ds.Manifest.sourceFile = manifestPath
-		annotateFileMetadata(ds.Manifest.sourceFile, &ds.Manifest)
 
 		pipelines, err := filepath.Glob(filepath.Join(ds.sourceDir, "elasticsearch/ingest_pipeline/*.yml"))
 		if err != nil {

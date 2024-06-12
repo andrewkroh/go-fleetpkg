@@ -363,10 +363,7 @@
     }
   },
   "input": {
-    "manifest": {
-      "title": "CEL Custom API",
-      "type": "input"
-    },
+    "manifest": {},
     "sample_event": {
       "event": {
         "@timestamp": "2023-03-23T00:04:52.561Z",
