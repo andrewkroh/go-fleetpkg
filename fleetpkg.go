@@ -30,6 +30,7 @@ import (
 type Integration struct {
 	Build       *BuildManifest         `json:"build,omitempty" yaml:"build,omitempty"`
 	Manifest    Manifest               `json:"manifest,omitempty" yaml:"manifest,omitempty"`
+	Input       *DataStream            `json:"input,omitempty" yaml:"input,omitempty"`
 	DataStreams map[string]*DataStream `json:"data_streams,omitempty" yaml:"data_streams,omitempty"`
 	Changelog   Changelog              `json:"changelog,omitempty" yaml:"changelog,omitempty"`
 
@@ -436,7 +437,6 @@ func Read(path string) (*Integration, error) {
 	}
 	integration.Manifest.sourceFile = sourceFile
 	annotateFileMetadata(integration.Manifest.sourceFile, &integration.Manifest)
-
 	sourceFile = filepath.Join(path, "changelog.yml")
 	if err := readYAML(sourceFile, &integration.Changelog, true); err != nil {
 		return nil, err
@@ -455,15 +455,25 @@ func Read(path string) (*Integration, error) {
 		integration.Build.sourceFile = sourceFile
 	}
 
-	dataStreams, err := filepath.Glob(filepath.Join(path, "data_stream/*/manifest.yml"))
-	if err != nil {
-		return nil, err
+	var dataStreams []string
+	if integration.Manifest.Type == "input" {
+		dataStreams = []string{filepath.Join(path, "manifest.yml")}
+	} else {
+		var err error
+		dataStreams, err = filepath.Glob(filepath.Join(path, "data_stream/*/manifest.yml"))
+		if err != nil {
+			return nil, err
+		}
 	}
 	for _, manifestPath := range dataStreams {
 		ds := &DataStream{
 			sourceDir: filepath.Dir(manifestPath),
 		}
-		integration.DataStreams[filepath.Base(ds.sourceDir)] = ds
+		if integration.Manifest.Type == "input" {
+			integration.Input = ds
+		} else {
+			integration.DataStreams[filepath.Base(ds.sourceDir)] = ds
+		}
 
 		if err := readYAML(manifestPath, &ds.Manifest, true); err != nil {
 			return nil, err
