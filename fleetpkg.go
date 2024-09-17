@@ -121,6 +121,7 @@ type Manifest struct {
 	Owner           Owner                      `json:"owner,omitempty" yaml:"owner,omitempty"`
 	Elasticsearch   *ElasticsearchRequirements `json:"elasticsearch,omitempty" yaml:"elasticsearch,omitempty"`
 	Agent           *AgentRequirements         `json:"agent,omitempty" yaml:"agent,omitempty"`
+	DeploymentModes *DeploymentModes           `json:"deployment_modes,omitempty" yaml:"deployment_modes,omitempty"`
 
 	sourceFile string
 }
@@ -207,16 +208,17 @@ type Screenshots struct {
 }
 
 type Var struct {
-	Name        string   `json:"name,omitempty" yaml:"name,omitempty"`
-	Default     any      `json:"default,omitempty" yaml:"default,omitempty"`
-	Description string   `json:"description,omitempty" yaml:"description,omitempty"`
-	Type        string   `json:"type,omitempty" yaml:"type,omitempty"`
-	Title       string   `json:"title,omitempty" yaml:"title,omitempty"`
-	Multi       *bool    `json:"multi,omitempty" yaml:"multi,omitempty"`
-	Required    *bool    `json:"required,omitempty" yaml:"required,omitempty"`
-	Secret      *bool    `json:"secret,omitempty" yaml:"secret,omitempty"`
-	ShowUser    *bool    `json:"show_user,omitempty" yaml:"show_user,omitempty"`
-	Options     []Option `json:"options,omitempty" yaml:"options,omitempty"` // List of options for 'type: select'.
+	Name                  string   `json:"name,omitempty" yaml:"name,omitempty"`
+	Default               any      `json:"default,omitempty" yaml:"default,omitempty"`
+	Description           string   `json:"description,omitempty" yaml:"description,omitempty"`
+	Type                  string   `json:"type,omitempty" yaml:"type,omitempty"`
+	Title                 string   `json:"title,omitempty" yaml:"title,omitempty"`
+	Multi                 *bool    `json:"multi,omitempty" yaml:"multi,omitempty"`
+	Required              *bool    `json:"required,omitempty" yaml:"required,omitempty"`
+	Secret                *bool    `json:"secret,omitempty" yaml:"secret,omitempty"`
+	ShowUser              *bool    `json:"show_user,omitempty" yaml:"show_user,omitempty"`
+	Options               []Option `json:"options,omitempty" yaml:"options,omitempty"`                                   // List of options for 'type: select'.
+	HideInDeploymentModes []string `json:"hide_in_deployment_modes,omitempty" yaml:"hide_in_deployment_modes,omitempty"` // Whether this variable should be hidden in the UI for agent policies intended to some specific deployment modes.
 
 	FileMetadata `json:"-" yaml:"-"`
 }
@@ -250,19 +252,33 @@ type Input struct {
 }
 
 type PolicyTemplate struct {
-	Name         string        `json:"name,omitempty" yaml:"name,omitempty"`
-	Title        string        `json:"title,omitempty" yaml:"title,omitempty"`
-	Categories   []string      `json:"categories,omitempty" yaml:"categories,omitempty"`
-	Description  string        `json:"description,omitempty" yaml:"description,omitempty"`
-	DataStreams  []string      `json:"data_streams,omitempty" yaml:"data_streams,omitempty"`
-	Inputs       []Input       `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Icons        []Icons       `json:"icons,omitempty" yaml:"icons,omitempty"`
-	Screenshots  []Screenshots `json:"screenshots,omitempty" yaml:"screenshots,omitempty"`
-	Multiple     *bool         `json:"multiple,omitempty" yaml:"multiple,omitempty"`
-	Type         string        `json:"type,omitempty" yaml:"type,omitempty"` // Type of data stream.
-	Input        string        `json:"input,omitempty" yaml:"input,omitempty"`
-	TemplatePath string        `json:"template_path,omitempty" yaml:"template_path,omitempty"`
-	Vars         []Var         `json:"vars,omitempty" yaml:"vars,omitempty"` // Policy template level variables.
+	Name            string           `json:"name,omitempty" yaml:"name,omitempty"`
+	Title           string           `json:"title,omitempty" yaml:"title,omitempty"`
+	Categories      []string         `json:"categories,omitempty" yaml:"categories,omitempty"`
+	Description     string           `json:"description,omitempty" yaml:"description,omitempty"`
+	DataStreams     []string         `json:"data_streams,omitempty" yaml:"data_streams,omitempty"`
+	Inputs          []Input          `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Icons           []Icons          `json:"icons,omitempty" yaml:"icons,omitempty"`
+	Screenshots     []Screenshots    `json:"screenshots,omitempty" yaml:"screenshots,omitempty"`
+	Multiple        *bool            `json:"multiple,omitempty" yaml:"multiple,omitempty"`
+	Type            string           `json:"type,omitempty" yaml:"type,omitempty"` // Type of data stream.
+	Input           string           `json:"input,omitempty" yaml:"input,omitempty"`
+	TemplatePath    string           `json:"template_path,omitempty" yaml:"template_path,omitempty"`
+	Vars            []Var            `json:"vars,omitempty" yaml:"vars,omitempty"` // Policy template level variables.
+	DeploymentModes *DeploymentModes `json:"deployment_modes,omitempty" yaml:"deployment_modes,omitempty"`
+}
+
+// DeploymentModes options. The deployment mode refers to the mode used to deploy the Elastic Agents running this policy.
+type DeploymentModes struct {
+	// Options specific to the default deployment mode, where agents are normally managed by users, explicitly enrolled to Fleet and visible in UIs.
+	Default struct {
+		Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"` // Defaults to true in Fleet.
+	} `json:"default,omitempty" yaml:"default,omitempty"`
+
+	// Options specific to the Agentless deployment mode. This mode is used in offerings where the Elastic Agents running these policies are fully managed for the user.
+	Agentless struct {
+		Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	} `json:"agentless,omitempty" yaml:"agentless,omitempty"`
 }
 
 type Owner struct {
