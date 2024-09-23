@@ -122,6 +122,7 @@ type Manifest struct {
 	Elasticsearch   *ElasticsearchRequirements `json:"elasticsearch,omitempty" yaml:"elasticsearch,omitempty"`
 	Agent           *AgentRequirements         `json:"agent,omitempty" yaml:"agent,omitempty"`
 	DeploymentModes *DeploymentModes           `json:"deployment_modes,omitempty" yaml:"deployment_modes,omitempty"`
+	Discovery       *Discovery                 `json:"discovery,omitempty" yaml:"discovery,omitempty"`
 
 	sourceFile string
 }
@@ -129,6 +130,15 @@ type Manifest struct {
 // Path returns the path to the integration manifest.yml.
 func (m Manifest) Path() string {
 	return m.sourceFile
+}
+
+// Discovery provides a description of the data this package can be used with. It
+// can be used to discover the package from elements in the existing data.
+type Discovery struct {
+	// Description of the fields this package can be used with.
+	Fields []struct {
+		Name string `json:"name,omitempty" yaml:"name,omitempty"` // Name of the field.
+	} `json:"fields,omitempty" yaml:"fields,omitempty"`
 }
 
 type ElasticsearchRequirements struct {
