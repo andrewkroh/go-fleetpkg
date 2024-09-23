@@ -287,7 +287,10 @@ type DeploymentModes struct {
 
 	// Options specific to the Agentless deployment mode. This mode is used in offerings where the Elastic Agents running these policies are fully managed for the user.
 	Agentless struct {
-		Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+		Enabled      *bool  `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+		Organization string `json:"organization,omitempty" yaml:"organization,omitempty"` // The responsible organization of the integration. This is used to tag the agentless agent deployments for monitoring.
+		Division     string `json:"division,omitempty" yaml:"division,omitempty"`         // The division responsible for the integration. This is used to tag the agentless agent deployments for monitoring.
+		Team         string `json:"team,omitempty" yaml:"team,omitempty"`                 // The team responsible for the integration. This is used to tag the agentless agent deployments for monitoring.
 	} `json:"agentless,omitempty" yaml:"agentless,omitempty"`
 }
 
