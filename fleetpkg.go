@@ -102,28 +102,74 @@ func (f FieldsFile) Path() string {
 	return f.sourceFile
 }
 
+// Manifest represents the manifest.yml file of an integration package
+// that provides metadata about the package.
 type Manifest struct {
-	Name                    string                     `json:"name,omitempty" yaml:"name,omitempty"`
-	Title                   string                     `json:"title,omitempty" yaml:"title,omitempty"`
-	Version                 string                     `json:"version,omitempty" yaml:"version,omitempty"`
-	Release                 string                     `json:"release,omitempty" yaml:"release,omitempty"`
-	Description             string                     `json:"description,omitempty" yaml:"description,omitempty"`
-	Type                    string                     `json:"type,omitempty" yaml:"type,omitempty"`
-	Icons                   []Icons                    `json:"icons,omitempty" yaml:"icons,omitempty"`
-	FormatVersion           string                     `json:"format_version,omitempty" yaml:"format_version,omitempty"`
-	License                 string                     `json:"license,omitempty" yaml:"license,omitempty"`
-	Categories              []string                   `json:"categories,omitempty" yaml:"categories,omitempty"`
-	Conditions              Conditions                 `json:"conditions,omitempty" yaml:"conditions,omitempty"`
-	Screenshots             []Screenshots              `json:"screenshots,omitempty" yaml:"screenshots,omitempty"`
-	Source                  Source                     `json:"source,omitempty" yaml:"source,omitempty"`
-	Vars                    []Var                      `json:"vars,omitempty" yaml:"vars,omitempty"`
-	PolicyTemplates         []PolicyTemplate           `json:"policy_templates,omitempty" yaml:"policy_templates,omitempty"`
-	PolicyTemplatesBehavior string                     `json:"policy_templates_behavior,omitempty" yaml:"policy_templates_behavior,omitempty"` // Expected behavior when there are more than one policy template defined.
-	Owner                   Owner                      `json:"owner,omitempty" yaml:"owner,omitempty"`
-	Elasticsearch           *ElasticsearchRequirements `json:"elasticsearch,omitempty" yaml:"elasticsearch,omitempty"`
-	Agent                   *AgentRequirements         `json:"agent,omitempty" yaml:"agent,omitempty"`
-	DeploymentModes         *DeploymentModes           `json:"deployment_modes,omitempty" yaml:"deployment_modes,omitempty"`
-	Discovery               *Discovery                 `json:"discovery,omitempty" yaml:"discovery,omitempty"`
+	// Name is the name of the package.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+
+	// Title is the title of the package.
+	Title string `json:"title,omitempty" yaml:"title,omitempty"`
+
+	// Version is the version of the package.
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+
+	// Release is the stability of the package (deprecated, use prerelease tags in the version).
+	Release string `json:"release,omitempty" yaml:"release,omitempty"`
+
+	// Description is a description of the package.
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+
+	// Type is the type of package (e.g. integration).
+	Type string `json:"type,omitempty" yaml:"type,omitempty"`
+
+	// Icons is a list of icons for the package.
+	Icons []Icons `json:"icons,omitempty" yaml:"icons,omitempty"`
+
+	// FormatVersion is the version of the package format.
+	FormatVersion string `json:"format_version,omitempty" yaml:"format_version,omitempty"`
+
+	// License is the license under which the package is being released (deprecated).
+	License string `json:"license,omitempty" yaml:"license,omitempty"`
+
+	// Categories is a list of categories the package belongs to.
+	Categories []string `json:"categories,omitempty" yaml:"categories,omitempty"`
+
+	// Conditions specifies the conditions under which the package can be used.
+	Conditions Conditions `json:"conditions,omitempty" yaml:"conditions,omitempty"`
+
+	// Screenshots is a list of screenshots for the package.
+	Screenshots []Screenshots `json:"screenshots,omitempty" yaml:"screenshots,omitempty"`
+
+	// Source provides information about the source of the package.
+	Source Source `json:"source,omitempty" yaml:"source,omitempty"`
+
+	// Vars is a list of variables that can be configured for the package.
+	Vars []Var `json:"vars,omitempty" yaml:"vars,omitempty"`
+
+	// PolicyTemplates is a list of policy templates offered by this package.
+	PolicyTemplates []PolicyTemplate `json:"policy_templates,omitempty" yaml:"policy_templates,omitempty"`
+
+	// PolicyTemplatesBehavior specifies the expected behavior when there are more than one policy template defined.
+	// When set to "combined_policy", a single policy template is available that combines all the defined templates.
+	// When set to "individual_policies", all policies are individually available, but there is no combined policy.
+	// The default value is "all", where the combined policy template is available along with the individual policies.
+	PolicyTemplatesBehavior string `json:"policy_templates_behavior,omitempty" yaml:"policy_templates_behavior,omitempty"`
+
+	// Owner provides information about the owner of the package.
+	Owner Owner `json:"owner,omitempty" yaml:"owner,omitempty"`
+
+	// Elasticsearch specifies the Elasticsearch requirements for the package.
+	Elasticsearch *ElasticsearchRequirements `json:"elasticsearch,omitempty" yaml:"elasticsearch,omitempty"`
+
+	// Agent specifies the agent requirements for the package.
+	Agent *AgentRequirements `json:"agent,omitempty" yaml:"agent,omitempty"`
+
+	// DeploymentModes specifies the deployment modes supported by the package.
+	DeploymentModes *DeploymentModes `json:"deployment_modes,omitempty" yaml:"deployment_modes,omitempty"`
+
+	// Discovery provides information about the package discovery capabilities.
+	Discovery *Discovery `json:"discovery,omitempty" yaml:"discovery,omitempty"`
 
 	sourceFile string
 }
@@ -218,18 +264,33 @@ type Screenshots struct {
 	Type  string `json:"type,omitempty" yaml:"type,omitempty"`
 }
 
+// Var represents an input variable for a package configuration. Variables allow users
+// to customize package behavior through the Fleet UI or configuration.
 type Var struct {
-	Name                  string   `json:"name,omitempty" yaml:"name,omitempty"`
-	Default               any      `json:"default,omitempty" yaml:"default,omitempty"`
-	Description           string   `json:"description,omitempty" yaml:"description,omitempty"`
-	Type                  string   `json:"type,omitempty" yaml:"type,omitempty"`
-	Title                 string   `json:"title,omitempty" yaml:"title,omitempty"`
-	Multi                 *bool    `json:"multi,omitempty" yaml:"multi,omitempty"`
-	Required              *bool    `json:"required,omitempty" yaml:"required,omitempty"`
-	Secret                *bool    `json:"secret,omitempty" yaml:"secret,omitempty"`
-	ShowUser              *bool    `json:"show_user,omitempty" yaml:"show_user,omitempty"`
-	Options               []Option `json:"options,omitempty" yaml:"options,omitempty"`                                   // List of options for 'type: select'.
-	HideInDeploymentModes []string `json:"hide_in_deployment_modes,omitempty" yaml:"hide_in_deployment_modes,omitempty"` // Whether this variable should be hidden in the UI for agent policies intended to some specific deployment modes.
+	// Name is the variable name.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// Default is the default value(s) for the variable.
+	Default any `json:"default,omitempty" yaml:"default,omitempty"`
+	// Description is a short description of the variable.
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	// Type is the data type of variable (e.g., bool, email, integer, password, select, text, textarea, time_zone, url, yaml).
+	Type string `json:"type,omitempty" yaml:"type,omitempty"`
+	// Title is the title of the variable displayed in the UI.
+	Title string `json:"title,omitempty" yaml:"title,omitempty"`
+	// Multi specifies if the variable can contain multiple values.
+	Multi *bool `json:"multi,omitempty" yaml:"multi,omitempty"`
+	// Required specifies if the variable is required.
+	Required *bool `json:"required,omitempty" yaml:"required,omitempty"`
+	// Secret indicates that the variable contains sensitive information that should be stored securely.
+	// Secret variables are write-only; once set, users cannot read them again, only overwrite them.
+	Secret *bool `json:"secret,omitempty" yaml:"secret,omitempty"`
+	// ShowUser indicates whether this variable should be shown to the user by default.
+	ShowUser *bool `json:"show_user,omitempty" yaml:"show_user,omitempty"`
+	// Options is a list of options for variables of type 'select'.
+	Options []Option `json:"options,omitempty" yaml:"options,omitempty"`
+	// HideInDeploymentModes specifies whether this variable should be hidden in the UI
+	// for agent policies intended for specific deployment modes.
+	HideInDeploymentModes []string `json:"hide_in_deployment_modes,omitempty" yaml:"hide_in_deployment_modes,omitempty"`
 
 	FileMetadata `json:"-" yaml:"-"`
 }
