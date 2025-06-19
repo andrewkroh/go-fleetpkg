@@ -27,38 +27,45 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Field represents an Elasticsearch field definition in the Elastic package
+// specification. It contains all the properties that can be used to define how a
+// field is mapped, indexed, and used in Elasticsearch.
+//
+// Field definitions can be nested, with parent fields containing child fields.
+// Each field must have a name, and most fields will have a type that determines
+// how the field is indexed and stored in Elasticsearch.
 type Field struct {
-	Name                  string   `json:"name,omitempty" yaml:"name,omitempty"`
-	Type                  string   `json:"type,omitempty" yaml:"type,omitempty"`
-	Description           string   `json:"description,omitempty" yaml:"description,omitempty"`
-	Value                 string   `json:"value,omitempty" yaml:"value,omitempty"`
-	Example               any      `json:"example,omitempty" yaml:"example,omitempty"`
-	MetricType            string   `json:"metric_type,omitempty" yaml:"metric_type,omitempty"`
-	Unit                  string   `json:"unit,omitempty" yaml:"unit,omitempty"`
-	DateFormat            string   `json:"date_format,omitempty" yaml:"date_format,omitempty"`
-	Dimension             *bool    `json:"dimension,omitempty" yaml:"dimension,omitempty"`
-	Pattern               string   `json:"pattern,omitempty" yaml:"pattern,omitempty"`
-	External              string   `json:"external,omitempty" yaml:"external,omitempty"`
-	Fields                []Field  `json:"fields,omitempty" yaml:"fields,omitempty"`
-	DocValues             *bool    `json:"doc_values,omitempty" yaml:"doc_values,omitempty"`
-	Index                 *bool    `json:"index,omitempty" yaml:"index,omitempty"`
-	CopyTo                string   `json:"copy_to,omitempty" yaml:"copy_to,omitempty"`
-	Enabled               *bool    `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	Dynamic               string   `json:"dynamic,omitempty" yaml:"dynamic,omitempty"`
-	ScalingFactor         *int     `json:"scaling_factor,omitempty" yaml:"scaling_factor,omitempty"`
-	Analyzer              string   `json:"analyzer,omitempty" yaml:"analyzer,omitempty"`
-	SearchAnalyzer        string   `json:"search_analyzer,omitempty" yaml:"search_analyzer,omitempty"`
-	MultiFields           []Field  `json:"multi_fields,omitempty" yaml:"multi_fields,omitempty"`
-	NullValue             string   `json:"null_value,omitempty" yaml:"null_value,omitempty"`
-	IgnoreMalformed       *bool    `json:"ignore_malformed,omitempty" yaml:"ignore_malformed,omitempty"`
-	IgnoreAbove           int      `json:"ignore_above,omitempty" yaml:"ignore_above,omitempty"`
-	ObjectType            string   `json:"object_type,omitempty" yaml:"object_type,omitempty"`
-	ObjectTypeMappingType string   `json:"object_type_mapping_type,omitempty" yaml:"object_type_mapping_type,omitempty"`
-	AliasTargetPath       string   `json:"path,omitempty" yaml:"path,omitempty"`
-	Normalize             []string `json:"normalize,omitempty" yaml:"normalize,omitempty"`
-	Normalizer            string   `json:"normalizer,omitempty" yaml:"normalizer,omitempty"`
-	IncludeInParent       *bool    `json:"include_in_parent,omitempty" yaml:"include_in_parent,omitempty"`
-	DefaultMetric         string   `json:"default_metric,omitempty" yaml:"default_metric,omitempty"`
+	Name                  string   `json:"name,omitempty" yaml:"name,omitempty"`                                         // Name of the field
+	Type                  string   `json:"type,omitempty" yaml:"type,omitempty"`                                         // Type of the field as used in Elasticsearch
+	Description           string   `json:"description,omitempty" yaml:"description,omitempty"`                           // Description of the field
+	Value                 string   `json:"value,omitempty" yaml:"value,omitempty"`                                       // Constant value assigned to this field
+	Example               any      `json:"example,omitempty" yaml:"example,omitempty"`                                   // Example value for this field, used in documentation
+	MetricType            string   `json:"metric_type,omitempty" yaml:"metric_type,omitempty"`                           // For metric fields, defines what kind of metric this is
+	Unit                  string   `json:"unit,omitempty" yaml:"unit,omitempty"`                                         // Unit this field is measured in
+	DateFormat            string   `json:"date_format,omitempty" yaml:"date_format,omitempty"`                           // Format of the date string in this field
+	Dimension             *bool    `json:"dimension,omitempty" yaml:"dimension,omitempty"`                               // Identifies a field to be a dimension for grouping when a metric is associated with multiple dimensions
+	Pattern               string   `json:"pattern,omitempty" yaml:"pattern,omitempty"`                                   // Regular expression pattern for validating field values
+	External              string   `json:"external,omitempty" yaml:"external,omitempty"`                                 // Identifier for the type of metric when referencing an external schema
+	Fields                []Field  `json:"fields,omitempty" yaml:"fields,omitempty"`                                     // Nested fields within this field
+	DocValues             *bool    `json:"doc_values,omitempty" yaml:"doc_values,omitempty"`                             // Controls whether the field is indexed in a column-stride fashion for sorting and aggregations
+	Index                 *bool    `json:"index,omitempty" yaml:"index,omitempty"`                                       // Controls whether the field will be indexed for full-text search
+	CopyTo                string   `json:"copy_to,omitempty" yaml:"copy_to,omitempty"`                                   // Target field to copy this field's values to
+	Enabled               *bool    `json:"enabled,omitempty" yaml:"enabled,omitempty"`                                   // Whether mappings are created for this field's children
+	Dynamic               string   `json:"dynamic,omitempty" yaml:"dynamic,omitempty"`                                   // Controls whether new fields are added dynamically or ignored if not defined
+	ScalingFactor         *int     `json:"scaling_factor,omitempty" yaml:"scaling_factor,omitempty"`                     // Scaling factor to use for scaled_float type
+	Analyzer              string   `json:"analyzer,omitempty" yaml:"analyzer,omitempty"`                                 // Analyzer used for full-text search
+	SearchAnalyzer        string   `json:"search_analyzer,omitempty" yaml:"search_analyzer,omitempty"`                   // Analyzer to use at search time
+	MultiFields           []Field  `json:"multi_fields,omitempty" yaml:"multi_fields,omitempty"`                         // Sub-fields to index the same value in different ways
+	NullValue             string   `json:"null_value,omitempty" yaml:"null_value,omitempty"`                             // Value to replace null with when indexing
+	IgnoreMalformed       *bool    `json:"ignore_malformed,omitempty" yaml:"ignore_malformed,omitempty"`                 // Whether to ignore malformed values in the field
+	IgnoreAbove           int      `json:"ignore_above,omitempty" yaml:"ignore_above,omitempty"`                         // String values longer than this will not be indexed or stored
+	ObjectType            string   `json:"object_type,omitempty" yaml:"object_type,omitempty"`                           // Type of the object field
+	ObjectTypeMappingType string   `json:"object_type_mapping_type,omitempty" yaml:"object_type_mapping_type,omitempty"` // Mapping type for the object field
+	AliasTargetPath       string   `json:"path,omitempty" yaml:"path,omitempty"`                                         // For alias type fields this is the path to the target field, including parent objects
+	Normalize             []string `json:"normalize,omitempty" yaml:"normalize,omitempty"`                               // Specifies the expected normalizations for a field, such as 'array' normalization
+	Normalizer            string   `json:"normalizer,omitempty" yaml:"normalizer,omitempty"`                             // Specifies the name of a normalizer to apply to keyword fields
+	IncludeInParent       *bool    `json:"include_in_parent,omitempty" yaml:"include_in_parent,omitempty"`               // For nested field types, specifies if fields in the nested object are also added to the parent document
+	DefaultMetric         string   `json:"default_metric,omitempty" yaml:"default_metric,omitempty"`                     // For aggregate_metric_double fields, specifies the default metric aggregation
 
 	// AdditionalProperties contains additional properties that are not
 	// explicitly specified in the package-spec and are not used by Fleet.
@@ -181,10 +188,9 @@ func flattenField(key []string, f Field) ([]Field, error) {
 		flat = append(flat, tmpFlats...)
 	}
 
-	// I would consider this to be an incorrect definition to
-	// have sub-fields in a field not declared as a type=group.
-	// This will include those fields in the list in order to not
-	// mask bad definitions.
+	// I would consider this to be an incorrect definition to have sub-fields in
+	// a field not declared as a type=group. This will include those fields in
+	// the list to not mask bad definitions.
 	if f.Type != "" && f.Type != "group" {
 		parent := f
 		parent.Name = strings.Join(parentName, ".")
