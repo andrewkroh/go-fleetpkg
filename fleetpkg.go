@@ -32,6 +32,7 @@ type Integration struct {
 	Manifest    Manifest               `json:"manifest,omitempty" yaml:"manifest,omitempty"`
 	Input       *DataStream            `json:"input,omitempty" yaml:"input,omitempty"`
 	DataStreams map[string]*DataStream `json:"data_streams,omitempty" yaml:"data_streams,omitempty"`
+	Transforms  map[string]*Transform  `json:"transforms,omitempty" yaml:"transforms,omitempty"`
 	Changelog   Changelog              `json:"changelog,omitempty" yaml:"changelog,omitempty"`
 
 	sourceFile string
@@ -243,6 +244,7 @@ func (c *Conditions) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&pc); err != nil {
 		return err
 	}
+	*c = Conditions(pc.conditions)
 
 	if pc.Kibana.Version != "" {
 		c.Kibana.Version = pc.Kibana.Version
@@ -338,6 +340,11 @@ type PolicyTemplate struct {
 	TemplatePath    string           `json:"template_path,omitempty" yaml:"template_path,omitempty"`
 	Vars            []Var            `json:"vars,omitempty" yaml:"vars,omitempty"` // Policy template level variables.
 	DeploymentModes *DeploymentModes `json:"deployment_modes,omitempty" yaml:"deployment_modes,omitempty"`
+
+	// Indicate if this package is capable of satisfying FIPS requirements. Set
+	// to false if it uses any input that cannot be configured to use FIPS
+	// cryptography. Defaults to true.
+	FIPSCompatible *bool `json:"fips_compatible,omitempty" yaml:"fips_compatible,omitempty"`
 }
 
 // DeploymentModes options. The deployment mode refers to the mode used to deploy the Elastic Agents running this policy.
@@ -523,9 +530,9 @@ func (p *Processor) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// Read reads the Fleet integration at the specified path. The path should
-// point to the directory containing the integration's main manifest.yml.
-func Read(path string) (*Integration, error) {
+// Read an integration package from a directory.
+// The path must be the root of the integration package.
+func Read(path string, options ...Option) (*Integration, error) {
 	integration := &Integration{
 		DataStreams: map[string]*DataStream{},
 		sourceFile:  path,
@@ -634,6 +641,13 @@ func Read(path string) (*Integration, error) {
 		}
 	}
 
+	// Read elasticsearch transforms.
+	var err error
+	integration.Transforms, err = readTransforms(filepath.Join(path, "elasticsearch", "transform"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read transforms for '%s': %w", path, err)
+	}
+
 	return integration, nil
 }
 
@@ -669,4 +683,54 @@ func readJSON(path string, v any, strict bool) error {
 		return fmt.Errorf("failed decoding %s: %w", path, err)
 	}
 	return nil
+}
+
+func readTransforms(path string) (map[string]*Transform, error) {
+	dirs, err := os.ReadDir(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	transforms := map[string]*Transform{}
+	for _, de := range dirs {
+		if !de.IsDir() {
+			continue
+		}
+
+		transformPath := filepath.Join(path, de.Name())
+		transform, err := readTransform(transformPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read transform from %s: %w", transformPath, err)
+		}
+
+		transforms[de.Name()] = transform
+	}
+
+	if len(transforms) == 0 {
+		return nil, nil
+	}
+	return transforms, nil
+}
+
+func readTransform(path string) (*Transform, error) {
+	transform := Transform{sourceDir: path}
+
+	if err := readYAML(filepath.Join(path, "transform.yml"), &transform.Transform, false); err != nil {
+		return nil, err
+	}
+
+	if err := readYAML(filepath.Join(path, "manifest.yml"), &transform.Manifest, false); err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	var err error
+	transform.Fields, err = ReadFields(filepath.Join(path, "fields/*.yml"))
+	if err != nil {
+		return nil, err
+	}
+
+	return &transform, nil
 }
