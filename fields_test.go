@@ -59,7 +59,7 @@ func TestReadFields(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	const expected = 81
+	const expected = 154
 	if len(allFields) != expected {
 		t.Fatalf("got %d, want %d fields", len(allFields), expected)
 	}
