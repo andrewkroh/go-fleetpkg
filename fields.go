@@ -67,6 +67,12 @@ type Field struct {
 	IncludeInParent       *bool    `json:"include_in_parent,omitempty" yaml:"include_in_parent,omitempty"`               // For nested field types, specifies if fields in the nested object are also added to the parent document
 	DefaultMetric         string   `json:"default_metric,omitempty" yaml:"default_metric,omitempty"`                     // For aggregate_metric_double fields, specifies the default metric aggregation
 
+	// Specifies if field names containing dots should be expanded into
+	// subobjects. For example, if this is set to `true`, a field named `foo.bar`
+	// will be expanded into an object with a field named `bar` inside an object
+	// named `foo`. Defaults to true.
+	Subobjects *bool `json:"subobjects,omitempty" yaml:"subobjects,omitempty"`
+
 	// AdditionalProperties contains additional properties that are not
 	// explicitly specified in the package-spec and are not used by Fleet.
 	AdditionalAttributes map[string]any `json:"_additional_attributes,omitempty" yaml:",inline"`
