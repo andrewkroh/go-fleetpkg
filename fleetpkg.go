@@ -187,6 +187,10 @@ type Discovery struct {
 	Fields []struct {
 		Name string `json:"name,omitempty" yaml:"name,omitempty"` // Name of the field.
 	} `json:"fields,omitempty" yaml:"fields,omitempty"`
+	// List of the datasets this package can be used with.
+	Datasets []struct {
+		Name string `json:"name,omitempty" yaml:"name,omitempty"` // Name of the dataset.
+	} `json:"datasets,omitempty" yaml:"datasets,omitempty"`
 }
 
 type ElasticsearchRequirements struct {
