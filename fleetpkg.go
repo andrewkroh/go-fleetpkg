@@ -503,6 +503,8 @@ func (p IngestPipeline) Path() string {
 type Processor struct {
 	Type       string
 	Attributes map[string]any
+
+	FileMetadata `json:"-" yaml:"-"`
 }
 
 func (p *Processor) UnmarshalYAML(value *yaml.Node) error {
@@ -518,6 +520,9 @@ func (p *Processor) UnmarshalYAML(value *yaml.Node) error {
 		p.Attributes = v
 		break
 	}
+
+	p.FileMetadata.line = value.Line
+	p.FileMetadata.column = value.Column
 
 	return nil
 }
@@ -603,6 +608,7 @@ func Read(path string, options ...Option) (*Integration, error) {
 				return nil, err
 			}
 			pipeline.sourceFile = pipelinePath
+			annotateFileMetadata(pipeline.sourceFile, &pipeline)
 
 			if ds.Pipelines == nil {
 				ds.Pipelines = map[string]IngestPipeline{}
