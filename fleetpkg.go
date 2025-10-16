@@ -503,6 +503,7 @@ func (p IngestPipeline) Path() string {
 type Processor struct {
 	Type       string
 	Attributes map[string]any
+	OnFailure  []*Processor
 
 	FileMetadata `json:"-" yaml:"-"`
 }
@@ -511,6 +512,16 @@ func (p *Processor) UnmarshalYAML(value *yaml.Node) error {
 	var procMap map[string]map[string]any
 	if err := value.Decode(&procMap); err != nil {
 		return err
+	}
+
+	// Extract the list of on_failure processors.
+	for i, node := range value.Content[1].Content {
+		if node.Value != "on_failure" {
+			continue
+		}
+		if err := value.Content[1].Content[i+1].Decode(&p.OnFailure); err != nil {
+			return err
+		}
 	}
 
 	// The struct representation used here is much more convenient
