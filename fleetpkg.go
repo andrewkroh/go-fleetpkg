@@ -532,6 +532,9 @@ func (p *Processor) UnmarshalYAML(value *yaml.Node) error {
 		break
 	}
 
+	// on_failure processors are extracted to a separate field.
+	delete(p.Attributes, "on_failure")
+
 	p.FileMetadata.line = value.Line
 	p.FileMetadata.column = value.Column
 
