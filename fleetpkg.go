@@ -515,12 +515,15 @@ func (p *Processor) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	// Extract the list of on_failure processors.
-	for i, node := range value.Content[1].Content {
-		if node.Value != "on_failure" {
-			continue
-		}
-		if err := value.Content[1].Content[i+1].Decode(&p.OnFailure); err != nil {
-			return err
+	if len(value.Content) >= 2 && value.Content[1] != nil {
+		for i := 0; i < len(value.Content[1].Content); i += 2 {
+			if value.Content[1].Content[i].Value != "on_failure" {
+				continue
+			}
+			if err := value.Content[1].Content[i+1].Decode(&p.OnFailure); err != nil {
+				return err
+			}
+			break
 		}
 	}
 
