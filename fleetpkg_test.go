@@ -234,14 +234,6 @@ set:
 				Attributes: map[string]any{
 					"field": "key",
 					"value": "value",
-					"on_failure": []any{
-						map[string]any{
-							"set": map[string]any{
-								"field": "on_fail_key",
-								"value": "on_fail_value",
-							},
-						},
-					},
 				},
 				OnFailure: []*Processor{
 					{
@@ -282,22 +274,6 @@ set:
 				Attributes: map[string]any{
 					"field": "key",
 					"value": "value",
-					"on_failure": []any{
-						map[string]any{
-							"set": map[string]any{
-								"field": "on_fail_key",
-								"value": "on_fail_value",
-								"on_failure": []any{
-									map[string]any{
-										"set": map[string]any{
-											"field": "on_fail2_key",
-											"value": "on_fail2_value",
-										},
-									},
-								},
-							},
-						},
-					},
 				},
 				OnFailure: []*Processor{
 					{
@@ -305,14 +281,6 @@ set:
 						Attributes: map[string]any{
 							"field": "on_fail_key",
 							"value": "on_fail_value",
-							"on_failure": []any{
-								map[string]any{
-									"set": map[string]any{
-										"field": "on_fail2_key",
-										"value": "on_fail2_value",
-									},
-								},
-							},
 						},
 						OnFailure: []*Processor{
 							{

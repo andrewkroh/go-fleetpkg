@@ -509,29 +509,20 @@ type Processor struct {
 }
 
 func (p *Processor) UnmarshalYAML(value *yaml.Node) error {
-	var procMap map[string]map[string]any
+	var procMap map[string]struct {
+		Attributes map[string]any `yaml:",inline"`
+		OnFailure  []*Processor   `yaml:"on_failure"`
+	}
 	if err := value.Decode(&procMap); err != nil {
 		return err
-	}
-
-	// Extract the list of on_failure processors.
-	if len(value.Content) >= 2 && value.Content[1] != nil {
-		for i := 0; i < len(value.Content[1].Content); i += 2 {
-			if value.Content[1].Content[i].Value != "on_failure" {
-				continue
-			}
-			if err := value.Content[1].Content[i+1].Decode(&p.OnFailure); err != nil {
-				return err
-			}
-			break
-		}
 	}
 
 	// The struct representation used here is much more convenient
 	// to work with than the original map of map format.
 	for k, v := range procMap {
 		p.Type = k
-		p.Attributes = v
+		p.Attributes = v.Attributes
+		p.OnFailure = v.OnFailure
 		break
 	}
 
