@@ -534,13 +534,23 @@ func (p *Processor) UnmarshalYAML(value *yaml.Node) error {
 
 func (p *Processor) MarshalYAML() (interface{}, error) {
 	return map[string]any{
-		p.Type: p.Attributes,
+		p.Type: struct {
+			Attributes map[string]any `yaml:",inline"`
+			OnFailure  []*Processor   `yaml:"on_failure,omitempty"`
+		}{p.Attributes, p.OnFailure},
 	}, nil
 }
 
 func (p *Processor) MarshalJSON() ([]byte, error) {
+	properties := make(map[string]any, len(p.Attributes)+1)
+	for k, v := range p.Attributes {
+		properties[k] = v
+	}
+	if len(p.OnFailure) > 0 {
+		properties["on_failure"] = p.OnFailure
+	}
 	return json.Marshal(map[string]any{
-		p.Type: p.Attributes,
+		p.Type: properties,
 	})
 }
 

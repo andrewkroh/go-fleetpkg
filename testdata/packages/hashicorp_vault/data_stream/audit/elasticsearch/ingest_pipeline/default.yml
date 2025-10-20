@@ -4,6 +4,10 @@ processors:
   - set:
       field: ecs.version
       value: '8.7.0'
+      on_failure:
+        - set:
+            field: error.message
+            value: Failure occurred.
   - rename:
       field: message
       target_field: event.original
