@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
@@ -190,4 +191,131 @@ func compareYAML(t *testing.T, file string, data any) {
 
 	// Compare YAML
 	assert.YAMLEq(t, string(goldenData), buf.String())
+}
+
+func TestProcessor_UnmarshalYAML(t *testing.T) {
+	testCases := []struct {
+		name string
+		yaml string
+		want *Processor
+	}{
+		{
+			name: "no_on_failure",
+			yaml: `
+set:
+  field: key
+  value: value
+`,
+			want: &Processor{
+				Type: "set",
+				Attributes: map[string]any{
+					"field": "key",
+					"value": "value",
+				},
+				FileMetadata: FileMetadata{
+					line:   2,
+					column: 1,
+				},
+			},
+		},
+		{
+			name: "on_failure",
+			yaml: `
+set:
+  field: key
+  value: value
+  on_failure:
+    - set:
+        field: on_fail_key
+        value: on_fail_value
+`,
+			want: &Processor{
+				Type: "set",
+				Attributes: map[string]any{
+					"field": "key",
+					"value": "value",
+				},
+				OnFailure: []*Processor{
+					{
+						Type: "set",
+						Attributes: map[string]any{
+							"field": "on_fail_key",
+							"value": "on_fail_value",
+						},
+						FileMetadata: FileMetadata{
+							line:   6,
+							column: 7,
+						},
+					},
+				},
+				FileMetadata: FileMetadata{
+					line:   2,
+					column: 1,
+				},
+			},
+		},
+		{
+			name: "on_failure_nested",
+			yaml: `
+set:
+  field: key
+  value: value
+  on_failure:
+    - set:
+        field: on_fail_key
+        value: on_fail_value
+        on_failure:
+        - set:
+            field: on_fail2_key
+            value: on_fail2_value
+`,
+			want: &Processor{
+				Type: "set",
+				Attributes: map[string]any{
+					"field": "key",
+					"value": "value",
+				},
+				OnFailure: []*Processor{
+					{
+						Type: "set",
+						Attributes: map[string]any{
+							"field": "on_fail_key",
+							"value": "on_fail_value",
+						},
+						OnFailure: []*Processor{
+							{
+								Type: "set",
+								Attributes: map[string]any{
+									"field": "on_fail2_key",
+									"value": "on_fail2_value",
+								},
+								FileMetadata: FileMetadata{
+									line:   10,
+									column: 11,
+								},
+							},
+						},
+						FileMetadata: FileMetadata{
+							line:   6,
+							column: 7,
+						},
+					},
+				},
+				FileMetadata: FileMetadata{
+					line:   2,
+					column: 1,
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var p Processor
+
+			err := yaml.Unmarshal([]byte(tc.yaml), &p)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, &p)
+		})
+	}
 }

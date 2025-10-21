@@ -141,6 +141,10 @@ data_streams:
         description: Pipeline for processing Hashicorp Vault audit logs.
         processors:
           - set:
+              on_failure:
+                - set:
+                    field: error.message
+                    value: Failure occurred.
               field: ecs.version
               value: 8.7.0
           - rename:

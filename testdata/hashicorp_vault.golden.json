@@ -199,6 +199,14 @@
             {
               "set": {
                 "field": "ecs.version",
+                "on_failure": [
+                  {
+                    "set": {
+                      "field": "error.message",
+                      "value": "Failure occurred."
+                    }
+                  }
+                ],
                 "value": "8.7.0"
               }
             },
