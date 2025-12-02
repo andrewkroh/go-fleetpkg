@@ -554,9 +554,32 @@ func (p *Processor) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// ReadOption configures the behavior of Read.
+type ReadOption func(*readConfig)
+
+// readConfig holds configuration options for Read.
+type readConfig struct {
+	annotateChangelogDates bool
+}
+
+// WithChangelogDates enables annotation of changelog release dates using git blame.
+// This feature uses git blame to determine when each release was added to the changelog.
+//
+// Note: This adds overhead as it requires running git blame for each changelog file,
+// and it may not be accurate if the changelog file is reformatted.
+func WithChangelogDates() ReadOption {
+	return func(c *readConfig) {
+		c.annotateChangelogDates = true
+	}
+}
+
 // Read an integration package from a directory.
 // The path must be the root of the integration package.
-func Read(path string, options ...Option) (*Integration, error) {
+func Read(path string, options ...ReadOption) (*Integration, error) {
+	cfg := &readConfig{}
+	for _, opt := range options {
+		opt(cfg)
+	}
 	integration := &Integration{
 		DataStreams: map[string]*DataStream{},
 		sourceFile:  path,
@@ -574,6 +597,13 @@ func Read(path string, options ...Option) (*Integration, error) {
 	}
 	integration.Changelog.sourceFile = sourceFile
 	annotateFileMetadata(integration.Changelog.sourceFile, &integration.Changelog)
+
+	// Annotate release dates using git blame if requested
+	if cfg.annotateChangelogDates {
+		if err := annotateReleaseDates(&integration.Changelog); err != nil {
+			return nil, err
+		}
+	}
 
 	sourceFile = filepath.Join(path, "_dev/build/build.yml")
 	if err := readYAML(sourceFile, &integration.Build, true); err != nil {

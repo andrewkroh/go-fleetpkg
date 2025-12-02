@@ -17,7 +17,11 @@
 
 package fleetpkg
 
-import "gopkg.in/yaml.v3"
+import (
+	"time"
+
+	"gopkg.in/yaml.v3"
+)
 
 type Changelog struct {
 	Releases []Release `json:"releases,omitempty" yaml:"releases,omitempty"`
@@ -35,8 +39,9 @@ func (c *Changelog) Path() string {
 }
 
 type Release struct {
-	Version string   `json:"version,omitempty" yaml:"version,omitempty"`
-	Changes []Change `json:"changes,omitempty" yaml:"changes,omitempty"`
+	Version string     `json:"version,omitempty" yaml:"version,omitempty"`
+	Changes []Change   `json:"changes,omitempty" yaml:"changes,omitempty"`
+	Date    *time.Time `json:"date,omitempty" yaml:"date,omitempty"` // Approximation of the release date based on git blame (requires using [WithChangelogDates]).
 
 	FileMetadata `json:"-" yaml:"-"`
 }
