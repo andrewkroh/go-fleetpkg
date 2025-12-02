@@ -71,16 +71,20 @@ func TestAllIntegrations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var count int
-	for _, pkgPath := range packages {
-		_, err := Read(pkgPath)
-		if err != nil {
-			t.Errorf("failed reading from %v: %v", pkgPath, err)
-		}
-		count++
+	if len(packages) == 0 {
+		t.Error("No packages were found in INTEGRATIONS_DIR")
 	}
-	if count == 0 {
-		t.Error("No packages were read from INTEGRATIONS_DIR")
+
+	// Process packages in parallel using subtests
+	for _, pkgPath := range packages {
+		pkgPath := pkgPath // capture loop variable
+		t.Run(filepath.Base(pkgPath), func(t *testing.T) {
+			t.Parallel() // Enable parallel execution
+			_, err := Read(pkgPath)
+			if err != nil {
+				t.Errorf("failed reading from %v: %v", pkgPath, err)
+			}
+		})
 	}
 }
 
